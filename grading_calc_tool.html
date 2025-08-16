@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Card Grading Calculator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f9f9f9;
+      color: #333;
+    }
+    .container {
+      max-width: 400px;
+      margin: auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      font-size: 1.5em;
+      text-align: center;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+    }
+    input {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    button {
+      margin-top: 15px;
+      width: 100%;
+      padding: 10px;
+      background: #4CAF50;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 1em;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #45a049;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f1f1f1;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Card Grading Calculator</h1>
+    <label for="rawPrice">Raw Card Price ($):</label>
+    <input type="number" id="rawPrice" value="20">
+
+    <label for="gradingFee">Grading Fee ($):</label>
+    <input type="number" id="gradingFee" value="21">
+
+    <label for="ebayFee">eBay Fee % (default 12.5):</label>
+    <input type="number" id="ebayFee" value="12.5">
+
+    <label for="gemRate">Gem Rate %:</label>
+    <input type="number" id="gemRate" value="60">
+
+    <button onclick="calculate()">Calculate</button>
+
+    <div id="results" class="result" style="display:none;"></div>
+  </div>
+
+  <script>
+    function calculate() {
+      const raw = parseFloat(document.getElementById('rawPrice').value);
+      const grading = parseFloat(document.getElementById('gradingFee').value);
+      const ebayFee = parseFloat(document.getElementById('ebayFee').value) / 100;
+      const gemRate = parseFloat(document.getElementById('gemRate').value);
+
+      const totalCost = raw + grading;
+      const breakeven = totalCost / (1 - ebayFee);
+      const psa9Target = breakeven * 1.05; // 5% buffer
+      const psa10Target = raw * 3; // rule of thumb
+
+      let decision = "NO";
+      if (gemRate >= 60) {
+        decision = "YES (if comps meet PSA 9 and 10 targets)";
+      }
+
+      document.getElementById('results').style.display = 'block';
+      document.getElementById('results').innerHTML = `
+        <strong>Total Cost Basis:</strong> $${totalCost.toFixed(2)}<br>
+        <strong>Break-even PSA 9:</strong> $${breakeven.toFixed(2)}<br>
+        <strong>Target PSA 9:</strong> $${psa9Target.toFixed(2)}+<br>
+        <strong>Target PSA 10:</strong> $${psa10Target.toFixed(2)}+<br>
+        <strong>Gem Rate:</strong> ${gemRate}%<br>
+        <strong>Decision:</strong> ${decision}
+      `;
+    }
+  </script>
+</body>
+</html>
