@@ -1,44 +1,99 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Card Grading Calculator</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Card Grading Calculator (Firebase + Google Auth)</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    h1 { color: #333; }
-    input, button { margin: 5px 0; padding: 8px; }
-    .card { border: 1px solid #ccc; border-radius: 8px; padding: 10px; margin: 10px 0; }
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:#0f172a;color:#e5e7eb;margin:0;padding:24px}
+    .wrap{max-width:980px;margin:0 auto}
+    .card{background:#0b1220;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px;margin-bottom:16px}
+    .grid{display:grid;gap:10px}
+    @media(min-width:760px){.grid{grid-template-columns:repeat(3,1fr)}}
+    label{font-size:12px;color:#94a3b8;margin-bottom:4px;display:block}
+    input{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:#0a0f1e;color:#e5e7eb;font-size:14px}
+    button{padding:10px 12px;border:0;border-radius:10px;background:#2563eb;color:#fff;font-weight:600;cursor:pointer}
+    .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+    .btn-secondary{background:#334155}
+    .btn-danger{background:#dc2626}
+    .pill{padding:2px 8px;border-radius:999px;font-size:12px;font-weight:700}
+    .good{background:rgba(22,163,74,.15);color:#86efac;border:1px solid rgba(22,163,74,.3)}
+    .bad{background:rgba(220,38,38,.15);color:#fecaca;border:1px solid rgba(220,38,38,.3)}
+    .stat{display:flex;justify-content:space-between;padding:10px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:#0a0f1e;margin-top:8px}
+    table{width:100%;border-collapse:collapse;margin-top:8px}
+    th,td{padding:10px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left;font-size:14px;vertical-align:middle}
+    th{color:#94a3b8;font-weight:600}
+    .small{font-size:12px;color:#94a3b8}
+    .authbar{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+    .muted{color:#94a3b8}
+    .hidden{display:none !important}
   </style>
 </head>
 <body>
-  <h1>Card Grading Calculator</h1>
+  <div class="wrap">
+    <div class="card authbar">
+      <div id="userInfo" class="muted">Not signed in</div>
+      <button id="signInBtn">Sign in with Google</button>
+      <button id="signOutBtn" class="btn-secondary hidden">Sign out</button>
+    </div>
 
-  <label>Card Name:</label><br>
-  <input type="text" id="cardName"><br>
+    <div class="card">
+      <h3 style="margin:0 0 8px">Card Grading Profit & EV Calculator</h3>
+      <div class="grid">
+        <div><label>Card Name</label><input id="cardName" placeholder="e.g., 1991 SkyBox #546 MJ"/></div>
+        <div><label>Raw Price ($)</label><input id="rawPrice" type="number" inputmode="decimal" value="20"/></div>
+        <div><label>Grading Fee ($)</label><input id="gradingFee" type="number" inputmode="decimal" value="21"/></div>
+        <div><label>PSA 9 Price ($)</label><input id="psa9Price" type="number" inputmode="decimal" value="25"/></div>
+        <div><label>PSA 10 Price ($)</label><input id="psa10Price" type="number" inputmode="decimal" value="100"/></div>
+        <div><label>eBay Fee (%)</label><input id="ebayFee" type="number" inputmode="decimal" value="12.5"/></div>
+        <div><label>Gem Rate (%)</label><input id="gemRate" type="number" inputmode="decimal" value="60"/></div>
+      </div>
 
-  <label>Raw Price ($):</label><br>
-  <input type="number" id="rawPrice" step="0.01"><br>
+      <div class="btns">
+        <button id="calcBtn">Calculate</button>
+        <button id="saveBtn" class="hidden">Save Card</button>
+        <button id="updateBtn" class="btn-secondary hidden">Update Card</button>
+        <button id="cancelEditBtn" class="btn-secondary hidden">Cancel Edit</button>
+      </div>
 
-  <label>PSA 9 Price ($):</label><br>
-  <input type="number" id="psa9Price" step="0.01"><br>
+      <div id="results" style="margin-top:8px;display:none">
+        <div class="stat"><span>Total Cost (Raw + Grading)</span><b id="r_cost"></b></div>
+        <div class="stat"><span>PSA 9 Net (after fees)</span><span><b id="r_net9"></b> <span id="r_pill9" class="pill"></span></span></div>
+        <div class="stat"><span>PSA 10 Net (after fees)</span><span><b id="r_net10"></b> <span id="r_pill10" class="pill"></span></span></div>
+        <div class="stat"><span>PSA 9 Profit/Loss</span><span id="r_p9"></span></div>
+        <div class="stat"><span>PSA 10 Profit/Loss</span><span id="r_p10"></span></div>
+        <div class="stat"><span>Expected Profit (Gem% × P10 + (1−Gem%) × P9)</span><span id="r_ev"></span></div>
+        <div class="stat"><span>Decision</span><b id="r_decision" class="pill"></b></div>
+        <div class="small">Decision rule: <b>YES</b> if Gem Rate ≥ 60% and EV ≥ $0.</div>
+      </div>
+      <div class="small">Sign in to save, edit, and delete your cards (private to your account).</div>
+    </div>
 
-  <label>PSA 10 Price ($):</label><br>
-  <input type="number" id="psa10Price" step="0.01"><br>
+    <div class="card">
+      <h3 style="margin:4px 0 8px">Saved Cards (Live)</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Card</th><th>Raw</th><th>9</th><th>10</th><th>Gem%</th><th>EV</th><th>Decision</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="cardsTbody"><tr><td colspan="8" class="small">Sign in to see your saved cards.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
 
-  <button id="saveBtn">Save Card</button>
-
-  <h2>Saved Cards</h2>
-  <div id="cardList"></div>
-
-  <!-- Firebase SDK -->
+  <!-- Firebase (module style) -->
   <script type="module">
-    // Import Firebase
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs } 
-      from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+    import { 
+      getFirestore, collection, addDoc, serverTimestamp, onSnapshot, 
+      query, orderBy, doc, deleteDoc, updateDoc 
+    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+    import {
+      getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut
+    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
-    // TODO: Replace with your Firebase config
+    // 🔧 REPLACE with your Firebase config
     const firebaseConfig = {
       apiKey: "YOUR_API_KEY",
       authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
@@ -48,103 +103,193 @@
       appId: "YOUR_APP_ID"
     };
 
-    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app);
 
-    const saveBtn = document.getElementById("saveBtn");
-    const cardList = document.getElementById("cardList");
+    // ===== DOM helpers =====
+    const $ = id => document.getElementById(id);
+    const money = v => "$" + (Number(v)||0).toFixed(2);
+    const pill = (el, ok) => { el.className = "pill " + (ok ? "good" : "bad"); el.textContent = ok ? "PROFIT" : "LOSS"; };
+    function show(el){ el.classList.remove("hidden"); }
+    function hide(el){ el.classList.add("hidden"); }
 
-    // Save card to Firestore
-    saveBtn.addEventListener("click", async () => {
-      const cardName = document.getElementById("cardName").value;
-      const rawPrice = parseFloat(document.getElementById("rawPrice").value);
-      const psa9Price = parseFloat(document.getElementById("psa9Price").value);
-      const psa10Price = parseFloat(document.getElementById("psa10Price").value);
+    let unsubscribe = null;        // Firestore live query unsub
+    let currentUid = null;         // signed-in user's UID
+    let editingId = null;          // doc id being edited
+    const cache = new Map();       // id -> data for quick edit fill
 
-      if (!cardName || isNaN(rawPrice) || isNaN(psa9Price) || isNaN(psa10Price)) {
-        alert("Please fill in all fields.");
-        return;
-      }
+    // ===== Calculator =====
+    function calc() {
+      const raw = parseFloat($("rawPrice").value)||0;
+      const grade = parseFloat($("gradingFee").value)||0;
+      const p9 = parseFloat($("psa9Price").value)||0;
+      const p10 = parseFloat($("psa10Price").value)||0;
+      const fee = (parseFloat($("ebayFee").value)||0)/100;
+      const gem = (parseFloat($("gemRate").value)||0)/100;
 
-      try {
-        await addDoc(collection(db, "cards"), {
-          cardName,
-          rawPrice,
-          psa9Price,
-          psa10Price,
-          createdAt: new Date()
-        });
-        alert("Card saved!");
-        loadCards();
-      } catch (e) {
-        console.error("Error adding document: ", e);
-      }
+      const cost = raw + grade;
+      const net9 = p9 * (1 - fee);
+      const net10 = p10 * (1 - fee);
+      const profit9 = net9 - cost;
+      const profit10 = net10 - cost;
+      const ev = gem * profit10 + (1 - gem) * profit9;
+      const pass = gem >= 0.60 && ev >= 0;
+
+      $("results").style.display = "block";
+      $("r_cost").textContent = money(cost);
+      $("r_net9").textContent = money(net9);
+      $("r_net10").textContent = money(net10);
+      pill($("r_pill9"), profit9 >= 0);
+      pill($("r_pill10"), profit10 >= 0);
+      $("r_p9").innerHTML = (profit9>=0?'<span class="pill good">+</span> ':'<span class="pill bad">−</span> ')+ money(Math.abs(profit9));
+      $("r_p10").innerHTML = (profit10>=0?'<span class="pill good">+</span> ':'<span class="pill bad">−</span> ')+ money(Math.abs(profit10));
+      $("r_ev").innerHTML = (ev>=0?'<span class="pill good">+</span> ':'<span class="pill bad">−</span> ')+ money(Math.abs(ev));
+      $("r_decision").className = "pill " + (pass ? "good" : "bad");
+      $("r_decision").textContent = pass ? "YES (Grade)" : "NO (Skip)";
+
+      return { raw, grade, p9, p10, feePct: fee, gemPct: gem, cost, net9, net10, profit9, profit10, ev, pass };
+    }
+
+    $("calcBtn").addEventListener("click", calc);
+
+    function clearEditing() {
+      editingId = null;
+      show($("saveBtn")); hide($("updateBtn")); hide($("cancelEditBtn"));
+    }
+
+    async function saveNew() {
+      if (!currentUid) { alert("Please sign in first."); return; }
+      const name = $("cardName").value.trim();
+      if (!name) { alert("Please enter a Card Name."); return; }
+      const r = calc();
+      await addDoc(collection(db, `users/${currentUid}/cards`), {
+        name,
+        raw: r.raw, gradingFee: r.grade, psa9: r.p9, psa10: r.p10,
+        ebayFeePct: r.feePct, gemRatePct: r.gemPct,
+        cost: r.cost, net9: r.net9, net10: r.net10,
+        profit9: r.profit9, profit10: r.profit10, ev: r.ev,
+        decision: r.pass ? "YES" : "NO",
+        createdAt: serverTimestamp()
+      });
+      alert("Saved ✅"); clearEditing();
+    }
+
+    async function updateExisting() {
+      if (!editingId || !currentUid) return;
+      const name = $("cardName").value.trim();
+      const r = calc();
+      await updateDoc(doc(db, `users/${currentUid}/cards`, editingId), {
+        name,
+        raw: r.raw, gradingFee: r.grade, psa9: r.p9, psa10: r.p10,
+        ebayFeePct: r.feePct, gemRatePct: r.gemPct,
+        cost: r.cost, net9: r.net9, net10: r.net10,
+        profit9: r.profit9, profit10: r.profit10, ev: r.ev,
+        decision: r.pass ? "YES" : "NO",
+      });
+      alert("Updated ✅"); clearEditing();
+    }
+
+    $("saveBtn").addEventListener("click", saveNew);
+    $("updateBtn").addEventListener("click", updateExisting);
+    $("cancelEditBtn").addEventListener("click", clearEditing);
+
+    function enterEdit(id, data) {
+      editingId = id;
+      $("cardName").value = data.name || "";
+      $("rawPrice").value = data.raw ?? "";
+      $("gradingFee").value = data.gradingFee ?? "";
+      $("psa9Price").value = data.psa9 ?? "";
+      $("psa10Price").value = data.psa10 ?? "";
+      $("ebayFee").value = data.ebayFeePct ? (data.ebayFeePct*100).toFixed(2) : "12.5";
+      $("gemRate").value = data.gemRatePct ? (data.gemRatePct*100).toFixed(0) : "60";
+      calc();
+      hide($("saveBtn")); show($("updateBtn")); show($("cancelEditBtn"));
+    }
+
+    // ===== Auth UI =====
+    $("signInBtn").addEventListener("click", async () => {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
     });
+    $("signOutBtn").addEventListener("click", async () => { await signOut(auth); });
 
-    // Load cards from Firestore
-    async function loadCards() {
-      cardList.innerHTML = "";
-      const querySnapshot = await getDocs(collection(db, "cards"));
-      querySnapshot.forEach((doc) => {
-        const card = doc.data();
-        const div = document.createElement("div");
-        div.classList.add("card");
-        div.innerHTML = `
-          <strong>${card.cardName}</strong><br>
-          Raw: $${card.rawPrice}<br>
-          PSA 9: $${card.psa9Price}<br>
-          PSA 10: $${card.psa10Price}
-        `;
-        cardList.appendChild(div);
+    function setSignedOutUI() {
+      $("userInfo").textContent = "Not signed in";
+      show($("signInBtn")); hide($("signOutBtn"));
+      hide($("saveBtn")); hide($("updateBtn")); hide($("cancelEditBtn"));
+      // clear table & unsubscribe
+      if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+      $("cardsTbody").innerHTML = `<tr><td colspan="8" class="small">Sign in to see your saved cards.</td></tr>`;
+    }
+
+    function setSignedInUI(user) {
+      $("userInfo").textContent = `Signed in as ${user.displayName || user.email}`;
+      hide($("signInBtn")); show($("signOutBtn"));
+      show($("saveBtn")); // enable saving
+    }
+
+    // Live query for a user
+    function startUserListener(uid) {
+      const q = query(collection(db, `users/${uid}/cards`), orderBy("createdAt","desc"));
+      unsubscribe = onSnapshot(q, (snap) => {
+        const tbody = $("cardsTbody");
+        tbody.innerHTML = "";
+        cache.clear();
+        snap.forEach(docSnap => {
+          const c = docSnap.data(); cache.set(docSnap.id, c);
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${c.name || ""}</td>
+            <td>${money(c.raw)}</td>
+            <td>${money(c.psa9)}</td>
+            <td>${money(c.psa10)}</td>
+            <td>${Math.round((c.gemRatePct||0)*100)}%</td>
+            <td>${money(c.ev || 0)}</td>
+            <td><span class="pill ${c.decision==='YES'?'good':'bad'}">${c.decision||'NO'}</span></td>
+            <td class="actions">
+              <button class="btn-secondary" data-action="edit" data-id="${docSnap.id}">Edit</button>
+              <button class="btn-danger" data-action="delete" data-id="${docSnap.id}">Delete</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+        if (!snap.size) {
+          $("cardsTbody").innerHTML = `<tr><td colspan="8" class="small">No cards saved yet.</td></tr>`;
+        }
       });
     }
 
-    // Load on page start
-    loadCards();
+    // Actions in table
+    $("cardsTbody").addEventListener("click", async (e) => {
+      const btn = e.target.closest("button"); if (!btn) return;
+      const id = btn.getAttribute("data-id");
+      const action = btn.getAttribute("data-action");
+      if (action === "delete") {
+        if (confirm("Delete this card?")) await deleteDoc(doc(db, `users/${currentUid}/cards`, id));
+      } else if (action === "edit") {
+        const data = cache.get(id); if (data) enterEdit(id, data);
+      }
+    });
+
+    // Auth state listener
+    onAuthStateChanged(auth, (user) => {
+      // clean up any previous listener
+      if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+      clearEditing();
+
+      if (!user) {
+        currentUid = null;
+        setSignedOutUI();
+        return;
+      }
+      currentUid = user.uid;
+      setSignedInUI(user);
+      startUserListener(currentUid);
+    });
+
+    // Convenience: compute once on load
+    window.addEventListener("DOMContentLoaded", calc);
   </script>
-
-	<script type="module">
-	  // Import the functions you need from the SDKs you need
-	  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-	  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
-	  // TODO: Add SDKs for Firebase products that you want to use
-	  // https://firebase.google.com/docs/web/setup#available-libraries
-
-	  // Import the functions you need from the SDKs you need
-	  import { initializeApp } from "firebase/app";
-	  import { getAnalytics } from "firebase/analytics";
-	  // TODO: Add SDKs for Firebase products that you want to use
-	  // https://firebase.google.com/docs/web/setup#available-libraries
-
-	  // Your web app's Firebase configuration
-	  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-	  const firebaseConfig = {
-	    apiKey: "AIzaSyBvUBx-QTjTyzv8oWxoCX4rweq72yChS3M",
-	    authDomain: "grading-calculator-ce36f.firebaseapp.com",
-	    projectId: "grading-calculator-ce36f",
-	    storageBucket: "grading-calculator-ce36f.firebasestorage.app",
-	    messagingSenderId: "406763572625",
-	    appId: "1:406763572625:web:026a965c194d9a3c8cde30",
-	    measurementId: "G-GRKKZPC8VV"
-	  };
-
-	  // Initialize Firebase
-	  const app = initializeApp(firebaseConfig);
-	  const analytics = getAnalytics(app);
-	  const firebaseConfig = {
-	    apiKey: "AIzaSyBvUBx-QTjTyzv8oWxoCX4rweq72yChS3M",
-	    authDomain: "grading-calculator-ce36f.firebaseapp.com",
-	    projectId: "grading-calculator-ce36f",
-	    storageBucket: "grading-calculator-ce36f.firebasestorage.app",
-	    messagingSenderId: "406763572625",
-	    appId: "1:406763572625:web:df8d6353c002a7528cde30",
-	    measurementId: "G-FV1SW7KC14"
-	  };
-
-	  // Initialize Firebase
-	  const app = initializeApp(firebaseConfig);
-	  const analytics = getAnalytics(app);
-	</script>
 </body>
 </html>
