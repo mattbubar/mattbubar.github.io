@@ -2,236 +2,149 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Card Grading Profit & EV Calculator</title>
+  <meta charset="UTF-8">
+  <title>Card Grading Calculator</title>
   <style>
-    :root {
-      --bg: #0f172a;
-      --card: #111827;
-      --muted: #94a3b8;
-      --text: #e5e7eb;
-      --green: #16a34a;
-      --red: #dc2626;
-      --accent: #2563eb;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      min-height: 100vh;
-      background: radial-gradient(1200px 600px at 20% 0%, #1f2937, var(--bg)),
-                  radial-gradient(1200px 600px at 80% 100%, #0b1220, var(--bg));
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-      color: var(--text);
-      padding: 24px;
-      display: grid;
-      place-items: start center;
-    }
-    .wrap {
-      width: 100%;
-      max-width: 720px;
-    }
-    .title {
-      text-align: center;
-      margin-bottom: 18px;
-      font-size: 26px;
-      letter-spacing: 0.2px;
-    }
-    .subtitle {
-      text-align: center;
-      margin-top: -6px;
-      margin-bottom: 18px;
-      color: var(--muted);
-      font-size: 14px;
-    }
-    .card {
-      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
-      border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 14px;
-      padding: 18px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.35);
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 12px;
-    }
-    @media (min-width: 680px) {
-      .grid { grid-template-columns: repeat(2, 1fr); }
-    }
-    label {
-      display: block;
-      font-size: 13px;
-      color: var(--muted);
-      margin-bottom: 6px;
-    }
-    input[type="number"] {
-      width: 100%;
-      padding: 12px 12px;
-      font-size: 15px;
-      color: var(--text);
-      background: #0b1220;
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 10px;
-      outline: none;
-    }
-    input[type="number"]::-webkit-outer-spin-button,
-    input[type="number"]::-webkit-inner-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
-    }
-    .btn {
-      margin-top: 8px;
-      width: 100%;
-      padding: 12px;
-      background: var(--accent);
-      color: #fff;
-      font-weight: 600;
-      border: 0;
-      border-radius: 10px;
-      cursor: pointer;
-      font-size: 16px;
-    }
-    .btn:active { transform: translateY(1px); }
-    .results {
-      margin-top: 16px;
-      display: grid;
-      gap: 10px;
-    }
-    .stat {
-      display: flex;
-      justify-content: space-between;
-      background: #0b1220;
-      border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 10px;
-      padding: 12px 14px;
-      font-size: 15px;
-    }
-    .pill {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.3px;
-    }
-    .good { background: rgba(22,163,74,0.15); color: #86efac; border: 1px solid rgba(22,163,74,0.35); }
-    .bad { background: rgba(220,38,38,0.15); color: #fecaca; border: 1px solid rgba(220,38,38,0.35); }
-    .muted { color: var(--muted); }
-    .footnote {
-      margin-top: 12px;
-      font-size: 12px;
-      color: var(--muted);
-      line-height: 1.4;
-    }
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1 { color: #333; }
+    input, button { margin: 5px 0; padding: 8px; }
+    .card { border: 1px solid #ccc; border-radius: 8px; padding: 10px; margin: 10px 0; }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="title">Card Grading Profit & EV Calculator</div>
-    <div class="subtitle">Inputs on the left, comps on the right. eBay fee assumed at 12.5% by default.</div>
+  <h1>Card Grading Calculator</h1>
 
-    <div class="card">
-      <div class="grid">
-        <div>
-          <label for="rawPrice">Raw Card Price ($)</label>
-          <input id="rawPrice" type="number" inputmode="decimal" placeholder="e.g., 20" value="20" />
-        </div>
-        <div>
-          <label for="psa9Price">PSA 9 Selling Price ($)</label>
-          <input id="psa9Price" type="number" inputmode="decimal" placeholder="e.g., 25" value="25" />
-        </div>
-        <div>
-          <label for="psa10Price">PSA 10 Selling Price ($)</label>
-          <input id="psa10Price" type="number" inputmode="decimal" placeholder="e.g., 100" value="100" />
-        </div>
-        <div>
-          <label for="gradingFee">Grading Fee ($)</label>
-          <input id="gradingFee" type="number" inputmode="decimal" placeholder="e.g., 21" value="21" />
-        </div>
-        <div>
-          <label for="ebayFee">eBay Fee (%)</label>
-          <input id="ebayFee" type="number" inputmode="decimal" value="12.5" />
-        </div>
-        <div>
-          <label for="gemRate">Gem Rate (% → % of PSA 10s)</label>
-          <input id="gemRate" type="number" inputmode="decimal" placeholder="e.g., 60" value="60" />
-        </div>
-      </div>
+  <label>Card Name:</label><br>
+  <input type="text" id="cardName"><br>
 
-      <button class="btn" onclick="calc()">Calculate</button>
+  <label>Raw Price ($):</label><br>
+  <input type="number" id="rawPrice" step="0.01"><br>
 
-      <div id="results" class="results" style="display:none">
-        <div class="stat"><span>Total Cost (Raw + Grading)</span><b id="cost"></b></div>
-        <div class="stat"><span>PSA 9 Net (after fees)</span><span><b id="net9"></b> <span id="pill9" class="pill"></span></span></div>
-        <div class="stat"><span>PSA 10 Net (after fees)</span><span><b id="net10"></b> <span id="pill10" class="pill"></span></span></div>
-        <div class="stat"><span>PSA 9 Profit/Loss</span><span id="p9"></span></div>
-        <div class="stat"><span>PSA 10 Profit/Loss</span><span id="p10"></span></div>
-        <div class="stat"><span>Expected Profit (using Gem %)</span><span id="pev"></span></div>
-        <div class="stat"><span>Decision</span><b id="decision"></b></div>
-      </div>
+  <label>PSA 9 Price ($):</label><br>
+  <input type="number" id="psa9Price" step="0.01"><br>
 
-      <div class="footnote">
-        <b>Decision logic:</b> YES if <code>Gem Rate ≥ 60%</code> and <code>Expected Profit ≥ $0</code> (EV computed as <code>Gem% × Profit(PSA10) + (1−Gem%) × Profit(PSA9)</code>).<br/>
-        This treats non-10 outcomes as PSA 9 for a conservative, simplified estimate. Adjust inputs if your PSA 9 comps include “9 or lower” behavior.
-      </div>
-    </div>
-  </div>
+  <label>PSA 10 Price ($):</label><br>
+  <input type="number" id="psa10Price" step="0.01"><br>
 
-  <script>
-    function money(n) {
-      const v = Number.isFinite(n) ? n : 0;
-      return '$' + v.toFixed(2);
-    }
-    function pill(el, ok) {
-      el.className = 'pill ' + (ok ? 'good' : 'bad');
-      el.textContent = ok ? 'PROFIT' : 'LOSS';
-    }
-    function calc() {
-      const raw = parseFloat(document.getElementById('rawPrice').value) || 0;
-      const p9 = parseFloat(document.getElementById('psa9Price').value) || 0;
-      const p10 = parseFloat(document.getElementById('psa10Price').value) || 0;
-      const grade = parseFloat(document.getElementById('gradingFee').value) || 0;
-      const feePct = (parseFloat(document.getElementById('ebayFee').value) || 0) / 100;
-      const gemPct = (parseFloat(document.getElementById('gemRate').value) || 0) / 100;
+  <button id="saveBtn">Save Card</button>
 
-      const cost = raw + grade;
-      const net9 = p9 * (1 - feePct);
-      const net10 = p10 * (1 - feePct);
+  <h2>Saved Cards</h2>
+  <div id="cardList"></div>
 
-      const profit9 = net9 - cost;
-      const profit10 = net10 - cost;
+  <!-- Firebase SDK -->
+  <script type="module">
+    // Import Firebase
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs } 
+      from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-      // Expected value treating non-10 as 9 (conservative simplification)
-      const ev = gemPct * profit10 + (1 - gemPct) * profit9;
+    // TODO: Replace with your Firebase config
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
 
-      // Set UI
-      document.getElementById('results').style.display = 'grid';
-      document.getElementById('cost').textContent = money(cost);
-      document.getElementById('net9').textContent = money(net9);
-      document.getElementById('net10').textContent = money(net10);
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-      const pill9 = document.getElementById('pill9');
-      const pill10 = document.getElementById('pill10');
-      pill(pill9, profit9 >= 0);
-      pill(pill10, profit10 >= 0);
+    const saveBtn = document.getElementById("saveBtn");
+    const cardList = document.getElementById("cardList");
 
-      const p9El = document.getElementById('p9');
-      const p10El = document.getElementById('p10');
-      p9El.innerHTML = (profit9 >= 0 ? '<span class=\"pill good\">+</span> ' : '<span class=\"pill bad\">−</span> ') + money(Math.abs(profit9));
-      p10El.innerHTML = (profit10 >= 0 ? '<span class=\"pill good\">+</span> ' : '<span class=\"pill bad\">−</span> ') + money(Math.abs(profit10));
+    // Save card to Firestore
+    saveBtn.addEventListener("click", async () => {
+      const cardName = document.getElementById("cardName").value;
+      const rawPrice = parseFloat(document.getElementById("rawPrice").value);
+      const psa9Price = parseFloat(document.getElementById("psa9Price").value);
+      const psa10Price = parseFloat(document.getElementById("psa10Price").value);
 
-      const pevEl = document.getElementById('pev');
-      pevEl.innerHTML = (ev >= 0 ? '<span class=\"pill good\">+</span> ' : '<span class=\"pill bad\">−</span> ') + money(Math.abs(ev));
+      if (!cardName || isNaN(rawPrice) || isNaN(psa9Price) || isNaN(psa10Price)) {
+        alert("Please fill in all fields.");
+        return;
+      }
 
-      const decision = document.getElementById('decision');
-      const pass = (gemPct >= 0.60) && (ev >= 0);
-      decision.className = pass ? 'pill good' : 'pill bad';
-      decision.textContent = pass ? 'YES (Grade)' : 'NO (Skip)';
+      try {
+        await addDoc(collection(db, "cards"), {
+          cardName,
+          rawPrice,
+          psa9Price,
+          psa10Price,
+          createdAt: new Date()
+        });
+        alert("Card saved!");
+        loadCards();
+      } catch (e) {
+        console.error("Error adding document: ", e);
+      }
+    });
+
+    // Load cards from Firestore
+    async function loadCards() {
+      cardList.innerHTML = "";
+      const querySnapshot = await getDocs(collection(db, "cards"));
+      querySnapshot.forEach((doc) => {
+        const card = doc.data();
+        const div = document.createElement("div");
+        div.classList.add("card");
+        div.innerHTML = `
+          <strong>${card.cardName}</strong><br>
+          Raw: $${card.rawPrice}<br>
+          PSA 9: $${card.psa9Price}<br>
+          PSA 10: $${card.psa10Price}
+        `;
+        cardList.appendChild(div);
+      });
     }
 
-    // Auto-run with default values on load for convenience
-    window.addEventListener('DOMContentLoaded', calc);
+    // Load on page start
+    loadCards();
   </script>
+
+	<script type="module">
+	  // Import the functions you need from the SDKs you need
+	  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+	  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
+	  // TODO: Add SDKs for Firebase products that you want to use
+	  // https://firebase.google.com/docs/web/setup#available-libraries
+
+	  // Import the functions you need from the SDKs you need
+	  import { initializeApp } from "firebase/app";
+	  import { getAnalytics } from "firebase/analytics";
+	  // TODO: Add SDKs for Firebase products that you want to use
+	  // https://firebase.google.com/docs/web/setup#available-libraries
+
+	  // Your web app's Firebase configuration
+	  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+	  const firebaseConfig = {
+	    apiKey: "AIzaSyBvUBx-QTjTyzv8oWxoCX4rweq72yChS3M",
+	    authDomain: "grading-calculator-ce36f.firebaseapp.com",
+	    projectId: "grading-calculator-ce36f",
+	    storageBucket: "grading-calculator-ce36f.firebasestorage.app",
+	    messagingSenderId: "406763572625",
+	    appId: "1:406763572625:web:026a965c194d9a3c8cde30",
+	    measurementId: "G-GRKKZPC8VV"
+	  };
+
+	  // Initialize Firebase
+	  const app = initializeApp(firebaseConfig);
+	  const analytics = getAnalytics(app);
+	  const firebaseConfig = {
+	    apiKey: "AIzaSyBvUBx-QTjTyzv8oWxoCX4rweq72yChS3M",
+	    authDomain: "grading-calculator-ce36f.firebaseapp.com",
+	    projectId: "grading-calculator-ce36f",
+	    storageBucket: "grading-calculator-ce36f.firebasestorage.app",
+	    messagingSenderId: "406763572625",
+	    appId: "1:406763572625:web:df8d6353c002a7528cde30",
+	    measurementId: "G-FV1SW7KC14"
+	  };
+
+	  // Initialize Firebase
+	  const app = initializeApp(firebaseConfig);
+	  const analytics = getAnalytics(app);
+	</script>
 </body>
 </html>
