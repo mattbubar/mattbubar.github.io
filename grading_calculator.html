@@ -143,7 +143,6 @@
     import {
       getAuth, onAuthStateChanged, signInWithPopup, signInWithRedirect,
       GoogleAuthProvider, signOut, getRedirectResult,
-      // NEW imports for persistence:
       setPersistence, browserLocalPersistence, browserSessionPersistence, inMemoryPersistence
     } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
@@ -156,7 +155,7 @@
       console.log(line);
     };
 
-    // Your real Firebase config
+    // Firebase config (yours)
     const firebaseConfig = {
       apiKey: "AIzaSyBvUBx-QTjTyzv8oWxoCX4rweq72yChS3M",
       authDomain: "grading-calculator-ce36f.firebaseapp.com",
@@ -168,15 +167,42 @@
     };
 
     const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+    const db  = getFirestore(app);
     const auth = getAuth(app);
     auth.useDeviceLanguage?.();
 
-    // Log origin & authDomain (helps catch domain issues)
+    // ---- Environment detection ----
+    const ua = navigator.userAgent || navigator.vendor || "";
+    const isIOS = /iPhone|iPad|iPod/.test(ua);
+    const isAndroid = /Android/i.test(ua);
+    const isMobile = isIOS || isAndroid;
+
+    // common in-app browsers (break auth)
+    const isFacebook = ua.includes("FBAN") || ua.includes("FBAV");
+    const isInstagram = ua.includes("Instagram");
+    const isTwitter   = ua.includes("Twitter");
+    const isTikTok    = ua.toLowerCase().includes("tiktok");
+    const isGSA       = ua.includes("GSA"); // Google app on iOS
+    const isInAppBrowser = isFacebook || isInstagram || isTwitter || isTikTok || isGSA;
+
+    // Show an "Open in Safari/Chrome" banner if in-app
+    if (isInAppBrowser) {
+      const bar = document.createElement("div");
+      bar.style.cssText = "position:sticky;top:0;z-index:9999;background:#581c87;color:#fff;padding:10px;border-radius:10px;margin:10px 0;text-align:center;font-weight:700";
+      bar.innerHTML = `This app works best in Safari/Chrome. <button id="openExternal" style="margin-left:8px;padding:8px 12px;border:0;border-radius:8px;background:#10b981;color:#fff;font-weight:800">Open in browser</button>`;
+      document.querySelector(".wrap").prepend(bar);
+      document.getElementById("openExternal").onclick = () => {
+        // user-gesture required: open same URL in external browser (most apps show an "open in Safari" option)
+        window.open(location.href, "_blank", "noopener,noreferrer");
+      };
+      dbg("inAppBrowser", true);
+    }
+
+    // Log origin & authDomain
     dbg("origin", location.origin);
     dbg("authDomain", auth.config?.authDomain || "(none)");
 
-    // Force persistent auth with graceful fallbacks
+    // ---- Force persistence with fallbacks ----
     try {
       await setPersistence(auth, browserLocalPersistence);
       dbg("persistence", "local");
@@ -190,13 +216,12 @@
       }
     }
 
-    // Helpers
+    // ---- UI helpers ----
     const $ = id => document.getElementById(id);
     const money = v => "$" + (Number(v)||0).toFixed(2);
     const pill = (el, ok) => { el.className = "pill " + (ok ? "good" : "bad"); el.textContent = ok ? "PROFIT" : "LOSS"; };
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-    // Calculator
+    // ---- Calculator ----
     function calc() {
       const raw = parseFloat($("rawPrice").value)||0;
       const grade = parseFloat($("gradingFee").value)||0;
@@ -228,7 +253,7 @@
     }
     $("calcBtn").addEventListener("click", calc);
 
-    // Save/Update/Delete
+    // ---- Firestore save/update/delete ----
     let unsubscribe = null, currentUid = null, editingId = null;
     const cache = new Map();
 
@@ -245,8 +270,12 @@
         profit9: r.profit9, profit10: r.profit10, ev: r.ev,
         decision: r.pass ? "YES" : "NO",
         createdAt: serverTimestamp()
+      })
+      .then(() => alert("Saved ✅"))
+      .catch(e => {
+        dbg("firestore add error", { code: e?.code, message: e?.message });
+        alert("Save error: " + (e.message || e.code || e));
       });
-      alert("Saved ✅");
       editingId = null;
       $("saveBtn").classList.remove("hidden");
       $("updateBtn").classList.add("hidden");
@@ -265,8 +294,12 @@
         cost: r.cost, net9: r.net9, net10: r.net10,
         profit9: r.profit9, profit10: r.profit10, ev: r.ev,
         decision: r.pass ? "YES" : "NO",
+      })
+      .then(() => alert("Updated ✅"))
+      .catch(e => {
+        dbg("firestore update error", { code: e?.code, message: e?.message });
+        alert("Update error: " + (e.message || e.code || e));
       });
-      alert("Updated ✅");
       editingId = null;
       $("saveBtn").classList.remove("hidden");
       $("updateBtn").classList.add("hidden");
@@ -297,32 +330,39 @@
 
     function startUserListener(uid) {
       const q = query(collection(db, `users/${uid}/cards`), orderBy("createdAt","desc"));
-      unsubscribe = onSnapshot(q, (snap) => {
-        const tbody = $("cardsTbody");
-        tbody.innerHTML = "";
-        cache.clear();
-        snap.forEach(docSnap => {
-          const c = docSnap.data(); cache.set(docSnap.id, c);
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${c.name || ""}</td>
-            <td>${money(c.raw)}</td>
-            <td>${money(c.psa9)}</td>
-            <td>${money(c.psa10)}</td>
-            <td>${Math.round((c.gemRatePct||0)*100)}%</td>
-            <td>${money(c.ev || 0)}</td>
-            <td><span class="pill ${c.decision==='YES'?'good':'bad'}">${c.decision||'NO'}</span></td>
-            <td class="actions">
-              <button class="btn-secondary" data-action="edit" data-id="${docSnap.id}">Edit</button>
-              <button class="btn-danger" data-action="delete" data-id="${docSnap.id}">Delete</button>
-            </td>
-          `;
-          tbody.appendChild(tr);
-        });
-        if (!snap.size) {
-          $("cardsTbody").innerHTML = `<tr><td colspan="8" class="small">No cards saved yet.</td></tr>`;
+      unsubscribe = onSnapshot(
+        q,
+        (snap) => {
+          const tbody = $("cardsTbody");
+          tbody.innerHTML = "";
+          cache.clear();
+          snap.forEach(docSnap => {
+            const c = docSnap.data(); cache.set(docSnap.id, c);
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td>${c.name || ""}</td>
+              <td>${money(c.raw)}</td>
+              <td>${money(c.psa9)}</td>
+              <td>${money(c.psa10)}</td>
+              <td>${Math.round((c.gemRatePct||0)*100)}%</td>
+              <td>${money(c.ev || 0)}</td>
+              <td><span class="pill ${c.decision==='YES'?'good':'bad'}">${c.decision||'NO'}</span></td>
+              <td class="actions">
+                <button class="btn-secondary" data-action="edit" data-id="${docSnap.id}">Edit</button>
+                <button class="btn-danger" data-action="delete" data-id="${docSnap.id}">Delete</button>
+              </td>
+            `;
+            tbody.appendChild(tr);
+          });
+          if (!snap.size) {
+            $("cardsTbody").innerHTML = `<tr><td colspan="8" class="small">No cards saved yet.</td></tr>`;
+          }
+        },
+        (e) => {
+          dbg("snapshot error", { code: e?.code, message: e?.message });
+          alert("Live view error: " + (e.message || e.code || e));
         }
-      });
+      );
     }
 
     $("cardsTbody").addEventListener("click", async (e) => {
@@ -338,22 +378,22 @@
 
     // ----- Auth: smart sign-in (popup with fallback; redirect on mobile) -----
     const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
 
     async function signInSmart() {
       try {
         if (isMobile) {
-          dbg("sign-in", "redirect");
+          dbg("sign-in", { mode: "redirect", inApp: isInAppBrowser });
           await signInWithRedirect(auth, provider);
           return;
         }
-        dbg("sign-in", "popup");
+        dbg("sign-in", { mode: "popup" });
         await signInWithPopup(auth, provider);
       } catch (e) {
-        // fallback to redirect for common popup issues
         if (e?.code === 'auth/popup-closed-by-user' ||
             e?.code === 'auth/popup-blocked' ||
             e?.code === 'auth/cancelled-popup-request') {
-          dbg("popup failed, fallback to redirect", { code: e.code });
+          dbg("popup failed -> redirect", { code: e.code });
           await signInWithRedirect(auth, provider);
         } else {
           dbg("sign-in error", { code: e?.code, message: e?.message });
@@ -365,7 +405,7 @@
     document.getElementById("signInBtn").onclick = signInSmart;
     document.getElementById("signOutBtn").onclick = () => signOut(auth);
 
-    // Process redirect result on load (mobile & fallback path)
+    // Process redirect result on load
     try {
       const res = await getRedirectResult(auth);
       if (res?.user) dbg("redirect result user", { uid: res.user.uid, email: res.user.email });
