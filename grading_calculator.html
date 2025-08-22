@@ -136,10 +136,11 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-	import { 
-	  getFirestore, collection, addDoc, serverTimestamp, onSnapshot, 
-	  query, orderBy, doc, deleteDoc, updateDoc 
-	} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+    import {
+      // use initializeFirestore instead of getFirestore
+      initializeFirestore, collection, addDoc, serverTimestamp, onSnapshot,
+      query, orderBy, doc, deleteDoc, updateDoc, getDocs
+    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
     import {
       getAuth, onAuthStateChanged, signInWithPopup, signInWithRedirect,
       GoogleAuthProvider, signOut, getRedirectResult,
@@ -155,307 +156,346 @@
       console.log(line);
     };
 
-    // Firebase config (yours)
-    const firebaseConfig = {
-      apiKey: "AIzaSyBvUBx-QTjTyzv8oWxoCX4rweq72yChS3M",
-      authDomain: "grading-calculator-ce36f.firebaseapp.com",
-      projectId: "grading-calculator-ce36f",
-      storageBucket: "grading-calculator-ce36f.firebasestorage.app",
-      messagingSenderId: "406763572625",
-      appId: "1:406763572625:web:026a965c194d9a3c8cde30",
-      measurementId: "G-GRKKZPC8VV"
-    };
-
-    const app = initializeApp(firebaseConfig);
-	const db = initializeFirestore(app, {
-	  // Most reliable on iOS Safari if any content/cross-site blockers are active
-	  experimentalForceLongPolling: true,
-	  useFetchStreams: false,
-	});
-    const auth = getAuth(app);
-    auth.useDeviceLanguage?.();
-
-    // ---- Environment detection ----
-    const ua = navigator.userAgent || navigator.vendor || "";
-    const isIOS = /iPhone|iPad|iPod/.test(ua);
-    const isAndroid = /Android/i.test(ua);
-    const isMobile = isIOS || isAndroid;
-
-    // common in-app browsers (break auth)
-    const isFacebook = ua.includes("FBAN") || ua.includes("FBAV");
-    const isInstagram = ua.includes("Instagram");
-    const isTwitter   = ua.includes("Twitter");
-    const isTikTok    = ua.toLowerCase().includes("tiktok");
-    const isGSA       = ua.includes("GSA"); // Google app on iOS
-    const isInAppBrowser = isFacebook || isInstagram || isTwitter || isTikTok || isGSA;
-
-    // Show an "Open in Safari/Chrome" banner if in-app
-    if (isInAppBrowser) {
-      const bar = document.createElement("div");
-      bar.style.cssText = "position:sticky;top:0;z-index:9999;background:#581c87;color:#fff;padding:10px;border-radius:10px;margin:10px 0;text-align:center;font-weight:700";
-      bar.innerHTML = `This app works best in Safari/Chrome. <button id="openExternal" style="margin-left:8px;padding:8px 12px;border:0;border-radius:8px;background:#10b981;color:#fff;font-weight:800">Open in browser</button>`;
-      document.querySelector(".wrap").prepend(bar);
-      document.getElementById("openExternal").onclick = () => {
-        // user-gesture required: open same URL in external browser (most apps show an "open in Safari" option)
-        window.open(location.href, "_blank", "noopener,noreferrer");
+    (async () => {
+      // Firebase config
+      const firebaseConfig = {
+        apiKey: "AIzaSyBvUBx-QTjTyzv8oWxoCX4rweq72yChS3M",
+        authDomain: "grading-calculator-ce36f.firebaseapp.com",
+        projectId: "grading-calculator-ce36f",
+        storageBucket: "grading-calculator-ce36f.firebasestorage.app",
+        messagingSenderId: "406763572625",
+        appId: "1:406763572625:web:026a965c194d9a3c8cde30",
+        measurementId: "G-GRKKZPC8VV"
       };
-      dbg("inAppBrowser", true);
-    }
 
-    // Log origin & authDomain
-    dbg("origin", location.origin);
-    dbg("authDomain", auth.config?.authDomain || "(none)");
+      // Init
+      const app = initializeApp(firebaseConfig);
 
-    // ---- Force persistence with fallbacks ----
-    try {
-      await setPersistence(auth, browserLocalPersistence);
-      dbg("persistence", "local");
-    } catch {
+      // Force Firestore long-polling (iOS Safari/content blockers workaround)
+      const db = initializeFirestore(app, {
+        experimentalForceLongPolling: true,
+        useFetchStreams: false,
+      });
+
+      const auth = getAuth(app);
+      auth.useDeviceLanguage?.();
+
+      // Environment flags
+      const ua = navigator.userAgent || navigator.vendor || "";
+      const isIOS = /iPhone|iPad|iPod/.test(ua);
+      const isAndroid = /Android/i.test(ua);
+      const isMobile = isIOS || isAndroid;
+      const isInAppBrowser =
+        ua.includes("FBAN") || ua.includes("FBAV") || ua.includes("Instagram") ||
+        ua.includes("Twitter") || ua.toLowerCase().includes("tiktok") || ua.includes("GSA");
+
+      // Show open-in-browser hint if in-app
+      if (isInAppBrowser) {
+        const bar = document.createElement("div");
+        bar.style.cssText = "position:sticky;top:0;z-index:9999;background:#581c87;color:#fff;padding:10px;border-radius:10px;margin:10px 0;text-align:center;font-weight:700";
+        bar.innerHTML = `This app works best in Safari/Chrome. <button id="openExternal" style="margin-left:8px;padding:8px 12px;border:0;border-radius:8px;background:#10b981;color:#fff;font-weight:800">Open in browser</button>`;
+        document.querySelector(".wrap").prepend(bar);
+        document.getElementById("openExternal").onclick = () => {
+          window.open(location.href, "_blank", "noopener,noreferrer");
+        };
+        dbg("inAppBrowser", true);
+      }
+
+      // Log origin/authDomain
+      dbg("origin", location.origin);
+      dbg("authDomain", auth.config?.authDomain || "(none)");
+
+      // Persistence with fallbacks (NO top-level await)
       try {
-        await setPersistence(auth, browserSessionPersistence);
-        dbg("persistence", "session");
+        await setPersistence(auth, browserLocalPersistence);
+        dbg("persistence", "local");
       } catch {
-        await setPersistence(auth, inMemoryPersistence);
-        dbg("persistence", "inMemory");
-      }
-    }
-
-	// --- storage/cookie diagnostics (iOS Safari troubleshooter) ---
-	try { localStorage.setItem('_t','1'); localStorage.removeItem('_t'); dbg('localStorage','ok'); } catch(e){ dbg('localStorage','blocked'); }
-	try { sessionStorage.setItem('_t','1'); sessionStorage.removeItem('_t'); dbg('sessionStorage','ok'); } catch(e){ dbg('sessionStorage','blocked'); }
-	// test first-party cookie (requires https)
-	document.cookie = "t=1; path=/; SameSite=Lax; Secure";
-	dbg('cookie', document.cookie.includes('t=1') ? 'ok' : 'blocked');
-
-    // ---- UI helpers ----
-    const $ = id => document.getElementById(id);
-    const money = v => "$" + (Number(v)||0).toFixed(2);
-    const pill = (el, ok) => { el.className = "pill " + (ok ? "good" : "bad"); el.textContent = ok ? "PROFIT" : "LOSS"; };
-
-    // ---- Calculator ----
-    function calc() {
-      const raw = parseFloat($("rawPrice").value)||0;
-      const grade = parseFloat($("gradingFee").value)||0;
-      const p9 = parseFloat($("psa9Price").value)||0;
-      const p10 = parseFloat($("psa10Price").value)||0;
-      const fee = (parseFloat($("ebayFee").value)||0)/100;
-      const gem = (parseFloat($("gemRate").value)||0)/100;
-
-      const cost = raw + grade;
-      const net9 = p9 * (1 - fee);
-      const net10 = p10 * (1 - fee);
-      const profit9 = net9 - cost;
-      const profit10 = net10 - cost;
-      const ev = gem * profit10 + (1 - gem) * profit9;
-      const pass = gem >= 0.60 && ev >= 0;
-
-      $("results").style.display = "block";
-      $("r_cost").textContent = money(cost);
-      $("r_net9").textContent = money(net9);
-      $("r_net10").textContent = money(net10);
-      pill($("r_pill9"), profit9 >= 0);
-      pill($("r_pill10"), profit10 >= 0);
-      $("r_p9").innerHTML = (profit9>=0?'<span class="pill good">+</span> ':'<span class="pill bad">−</span> ')+ money(Math.abs(profit9));
-      $("r_p10").innerHTML = (profit10>=0?'<span class="pill good">+</span> ':'<span class="pill bad">−</span> ')+ money(Math.abs(profit10));
-      $("r_ev").innerHTML = (ev>=0?'<span class="pill good">+</span> ':'<span class="pill bad">−</span> ')+ money(Math.abs(ev));
-      $("r_decision").className = "pill " + (pass ? "good" : "bad");
-      $("r_decision").textContent = pass ? "YES (Grade)" : "NO (Skip)";
-      return { raw, grade, p9, p10, feePct: fee, gemPct: gem, cost, net9, net10, profit9, profit10, ev, pass };
-    }
-    $("calcBtn").addEventListener("click", calc);
-
-    // ---- Firestore save/update/delete ----
-    let unsubscribe = null, currentUid = null, editingId = null;
-    const cache = new Map();
-
-    async function saveNew() {
-      if (!currentUid) { alert("Please sign in first."); return; }
-      const name = $("cardName").value.trim();
-      if (!name) { alert("Please enter a Card Name."); return; }
-      const r = calc();
-      await addDoc(collection(db, `users/${currentUid}/cards`), {
-        name,
-        raw: r.raw, gradingFee: r.grade, psa9: r.p9, psa10: r.p10,
-        ebayFeePct: r.feePct, gemRatePct: r.gemPct,
-        cost: r.cost, net9: r.net9, net10: r.net10,
-        profit9: r.profit9, profit10: r.profit10, ev: r.ev,
-        decision: r.pass ? "YES" : "NO",
-        createdAt: serverTimestamp()
-      })
-      .then(() => alert("Saved ✅"))
-      .catch(e => {
-        dbg("firestore add error", { code: e?.code, message: e?.message });
-        alert("Save error: " + (e.message || e.code || e));
-      });
-      editingId = null;
-      $("saveBtn").classList.remove("hidden");
-      $("updateBtn").classList.add("hidden");
-      $("cancelEditBtn").classList.add("hidden");
-    }
-    $("saveBtn").addEventListener("click", saveNew);
-
-    async function updateExisting() {
-      if (!editingId || !currentUid) return;
-      const name = $("cardName").value.trim();
-      const r = calc();
-      await updateDoc(doc(db, `users/${currentUid}/cards`, editingId), {
-        name,
-        raw: r.raw, gradingFee: r.grade, psa9: r.p9, psa10: r.p10,
-        ebayFeePct: r.feePct, gemRatePct: r.gemPct,
-        cost: r.cost, net9: r.net9, net10: r.net10,
-        profit9: r.profit9, profit10: r.profit10, ev: r.ev,
-        decision: r.pass ? "YES" : "NO",
-      })
-      .then(() => alert("Updated ✅"))
-      .catch(e => {
-        dbg("firestore update error", { code: e?.code, message: e?.message });
-        alert("Update error: " + (e.message || e.code || e));
-      });
-      editingId = null;
-      $("saveBtn").classList.remove("hidden");
-      $("updateBtn").classList.add("hidden");
-      $("cancelEditBtn").classList.add("hidden");
-    }
-    $("updateBtn").addEventListener("click", updateExisting);
-    $("cancelEditBtn").addEventListener("click", () => {
-      editingId = null;
-      $("saveBtn").classList.remove("hidden");
-      $("updateBtn").classList.add("hidden");
-      $("cancelEditBtn").classList.add("hidden");
-    });
-
-    function enterEdit(id, data) {
-      editingId = id;
-      $("cardName").value = data.name || "";
-      $("rawPrice").value = data.raw ?? "";
-      $("gradingFee").value = data.gradingFee ?? "";
-      $("psa9Price").value = data.psa9 ?? "";
-      $("psa10Price").value = data.psa10 ?? "";
-      $("ebayFee").value = data.ebayFeePct ? (data.ebayFeePct*100).toFixed(2) : "12.5";
-      $("gemRate").value = data.gemRatePct ? (data.gemRatePct*100).toFixed(0) : "60";
-      calc();
-      $("saveBtn").classList.add("hidden");
-      $("updateBtn").classList.remove("hidden");
-      $("cancelEditBtn").classList.remove("hidden");
-    }
-
-    function startUserListener(uid) {
-      const q = query(collection(db, `users/${uid}/cards`), orderBy("createdAt","desc"));
-      unsubscribe = onSnapshot(
-        q,
-        (snap) => {
-          const tbody = $("cardsTbody");
-          tbody.innerHTML = "";
-          cache.clear();
-          snap.forEach(docSnap => {
-            const c = docSnap.data(); cache.set(docSnap.id, c);
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-              <td>${c.name || ""}</td>
-              <td>${money(c.raw)}</td>
-              <td>${money(c.psa9)}</td>
-              <td>${money(c.psa10)}</td>
-              <td>${Math.round((c.gemRatePct||0)*100)}%</td>
-              <td>${money(c.ev || 0)}</td>
-              <td><span class="pill ${c.decision==='YES'?'good':'bad'}">${c.decision||'NO'}</span></td>
-              <td class="actions">
-                <button class="btn-secondary" data-action="edit" data-id="${docSnap.id}">Edit</button>
-                <button class="btn-danger" data-action="delete" data-id="${docSnap.id}">Delete</button>
-              </td>
-            `;
-            tbody.appendChild(tr);
-          });
-          if (!snap.size) {
-            $("cardsTbody").innerHTML = `<tr><td colspan="8" class="small">No cards saved yet.</td></tr>`;
-          }
-        },
-        (e) => {
-          dbg("snapshot error", { code: e?.code, message: e?.message });
-          alert("Live view error: " + (e.message || e.code || e));
+        try {
+          await setPersistence(auth, browserSessionPersistence);
+          dbg("persistence", "session");
+        } catch {
+          await setPersistence(auth, inMemoryPersistence);
+          dbg("persistence", "inMemory");
         }
-      );
-    }
-
-    $("cardsTbody").addEventListener("click", async (e) => {
-      const btn = e.target.closest("button"); if (!btn) return;
-      const id = btn.getAttribute("data-id");
-      const action = btn.getAttribute("data-action");
-      if (action === "delete") {
-        if (confirm("Delete this card?")) await deleteDoc(doc(db, `users/${currentUid}/cards`, id));
-      } else if (action === "edit") {
-        const data = cache.get(id); if (data) enterEdit(id, data);
       }
-    });
 
-    // ----- Auth: smart sign-in (popup with fallback; redirect on mobile) -----
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: "select_account" });
+      // Storage/cookie diagnostics
+      try { localStorage.setItem('_t','1'); localStorage.removeItem('_t'); dbg('localStorage','ok'); } catch(e){ dbg('localStorage','blocked'); }
+      try { sessionStorage.setItem('_t','1'); sessionStorage.removeItem('_t'); dbg('sessionStorage','ok'); } catch(e){ dbg('sessionStorage','blocked'); }
+      document.cookie = "t=1; path=/; SameSite=Lax; Secure";
+      dbg('cookie', document.cookie.includes('t=1') ? 'ok' : 'blocked');
 
-    async function signInSmart() {
+      // UI helpers
+      const $ = id => document.getElementById(id);
+      const money = v => "$" + (Number(v)||0).toFixed(2);
+      const pill = (el, ok) => { el.className = "pill " + (ok ? "good" : "bad"); el.textContent = ok ? "PROFIT" : "LOSS"; };
+
+      // Calculator
+      function calc() {
+        const raw = parseFloat($("rawPrice").value)||0;
+        const grade = parseFloat($("gradingFee").value)||0;
+        const p9 = parseFloat($("psa9Price").value)||0;
+        const p10 = parseFloat($("psa10Price").value)||0;
+        const fee = (parseFloat($("ebayFee").value)||0)/100;
+        const gem = (parseFloat($("gemRate").value)||0)/100;
+
+        const cost = raw + grade;
+        const net9 = p9 * (1 - fee);
+        const net10 = p10 * (1 - fee);
+        const profit9 = net9 - cost;
+        const profit10 = net10 - cost;
+        const ev = gem * profit10 + (1 - gem) * profit9;
+        const pass = gem >= 0.60 && ev >= 0;
+
+        $("results").style.display = "block";
+        $("r_cost").textContent = money(cost);
+        $("r_net9").textContent = money(net9);
+        $("r_net10").textContent = money(net10);
+        pill($("r_pill9"), profit9 >= 0);
+        pill($("r_pill10"), profit10 >= 0);
+        $("r_p9").innerHTML = (profit9>=0?'<span class="pill good">+</span> ':'<span class="pill bad">−</span> ')+ money(Math.abs(profit9));
+        $("r_p10").innerHTML = (profit10>=0?'<span class="pill good">+</span> ':'<span class="pill bad">−</span> ')+ money(Math.abs(profit10));
+        $("r_ev").innerHTML = (ev>=0?'<span class="pill good">+</span> ':'<span class="pill bad">−</span> ')+ money(Math.abs(ev));
+        $("r_decision").className = "pill " + (pass ? "good" : "bad");
+        $("r_decision").textContent = pass ? "YES (Grade)" : "NO (Skip)";
+        return { raw, grade, p9, p10, feePct: fee, gemPct: gem, cost, net9, net10, profit9, profit10, ev, pass };
+      }
+      $("calcBtn").addEventListener("click", calc);
+
+      // Firestore save/update/delete
+      let unsubscribe = null, currentUid = null, editingId = null;
+      const cache = new Map();
+
+      async function saveNew() {
+        if (!currentUid) { alert("Please sign in first."); return; }
+        const name = $("cardName").value.trim();
+        if (!name) { alert("Please enter a Card Name."); return; }
+        const r = calc();
+        await addDoc(collection(db, `users/${currentUid}/cards`), {
+          name,
+          raw: r.raw, gradingFee: r.grade, psa9: r.p9, psa10: r.p10,
+          ebayFeePct: r.feePct, gemRatePct: r.gemPct,
+          cost: r.cost, net9: r.net9, net10: r.net10,
+          profit9: r.profit9, profit10: r.profit10, ev: r.ev,
+          decision: r.pass ? "YES" : "NO",
+          createdAt: serverTimestamp()
+        })
+        .then(() => alert("Saved ✅"))
+        .catch(e => {
+          dbg("firestore add error", { code: e?.code, message: e?.message });
+          alert("Save error: " + (e.message || e.code || e));
+        });
+        editingId = null;
+        $("saveBtn").classList.remove("hidden");
+        $("updateBtn").classList.add("hidden");
+        $("cancelEditBtn").classList.add("hidden");
+      }
+      $("saveBtn").addEventListener("click", saveNew);
+
+      async function updateExisting() {
+        if (!editingId || !currentUid) return;
+        const name = $("cardName").value.trim();
+        const r = calc();
+        await updateDoc(doc(db, `users/${currentUid}/cards`, editingId), {
+          name,
+          raw: r.raw, gradingFee: r.grade, psa9: r.p9, psa10: r.p10,
+          ebayFeePct: r.feePct, gemRatePct: r.gemPct,
+          cost: r.cost, net9: r.net9, net10: r.net10,
+          profit9: r.profit9, profit10: r.profit10, ev: r.ev,
+          decision: r.pass ? "YES" : "NO",
+        })
+        .then(() => alert("Updated ✅"))
+        .catch(e => {
+          dbg("firestore update error", { code: e?.code, message: e?.message });
+          alert("Update error: " + (e.message || e.code || e));
+        });
+        editingId = null;
+        $("saveBtn").classList.remove("hidden");
+        $("updateBtn").classList.add("hidden");
+        $("cancelEditBtn").classList.add("hidden");
+      }
+      $("updateBtn").addEventListener("click", updateExisting);
+      $("cancelEditBtn").addEventListener("click", () => {
+        editingId = null;
+        $("saveBtn").classList.remove("hidden");
+        $("updateBtn").classList.add("hidden");
+        $("cancelEditBtn").classList.add("hidden");
+      });
+
+      function enterEdit(id, data) {
+        editingId = id;
+        $("cardName").value = data.name || "";
+        $("rawPrice").value = data.raw ?? "";
+        $("gradingFee").value = data.gradingFee ?? "";
+        $("psa9Price").value = data.psa9 ?? "";
+        $("psa10Price").value = data.psa10 ?? "";
+        $("ebayFee").value = data.ebayFeePct ? (data.ebayFeePct*100).toFixed(2) : "12.5";
+        $("gemRate").value = data.gemRatePct ? (data.gemRatePct*100).toFixed(0) : "60";
+        calc();
+        $("saveBtn").classList.add("hidden");
+        $("updateBtn").classList.remove("hidden");
+        $("cancelEditBtn").classList.remove("hidden");
+      }
+
+      // Realtime with fallback to polling if blocked
+      let pollingTimer = null;
+      function startUserListener(uid) {
+        const q = query(collection(db, `users/${uid}/cards`), orderBy("createdAt","desc"));
+
+        // Clear any old polling
+        if (pollingTimer) { clearInterval(pollingTimer); pollingTimer = null; }
+
+        try {
+          unsubscribe = onSnapshot(
+            q,
+            (snap) => {
+              const tbody = $("cardsTbody");
+              tbody.innerHTML = "";
+              cache.clear();
+              snap.forEach(docSnap => {
+                const c = docSnap.data(); cache.set(docSnap.id, c);
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                  <td>${c.name || ""}</td>
+                  <td>${money(c.raw)}</td>
+                  <td>${money(c.psa9)}</td>
+                  <td>${money(c.psa10)}</td>
+                  <td>${Math.round((c.gemRatePct||0)*100)}%</td>
+                  <td>${money(c.ev || 0)}</td>
+                  <td><span class="pill ${c.decision==='YES'?'good':'bad'}">${c.decision||'NO'}</span></td>
+                  <td class="actions">
+                    <button class="btn-secondary" data-action="edit" data-id="${docSnap.id}">Edit</button>
+                    <button class="btn-danger" data-action="delete" data-id="${docSnap.id}">Delete</button>
+                  </td>
+                `;
+                tbody.appendChild(tr);
+              });
+              if (!snap.size) {
+                $("cardsTbody").innerHTML = `<tr><td colspan="8" class="small">No cards saved yet.</td></tr>`;
+              }
+            },
+            (e) => {
+              // Realtime blocked -> fallback to polling
+              dbg("snapshot error -> switching to polling", { code: e?.code, message: e?.message });
+              if (unsubscribe) { try { unsubscribe(); } catch {} unsubscribe = null; }
+              const runPoll = async () => {
+                try {
+                  const snap = await getDocs(q);
+                  const tbody = $("cardsTbody");
+                  tbody.innerHTML = "";
+                  cache.clear();
+                  snap.forEach(docSnap => {
+                    const c = docSnap.data(); cache.set(docSnap.id, c);
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                      <td>${c.name || ""}</td>
+                      <td>${money(c.raw)}</td>
+                      <td>${money(c.psa9)}</td>
+                      <td>${money(c.psa10)}</td>
+                      <td>${Math.round((c.gemRatePct||0)*100)}%</td>
+                      <td>${money(c.ev || 0)}</td>
+                      <td><span class="pill ${c.decision==='YES'?'good':'bad'}">${c.decision||'NO'}</span></td>
+                      <td class="actions">
+                        <button class="btn-secondary" data-action="edit" data-id="${docSnap.id}">Edit</button>
+                        <button class="btn-danger" data-action="delete" data-id="${docSnap.id}">Delete</button>
+                      </td>
+                    `;
+                    tbody.appendChild(tr);
+                  });
+                  if (!snap.size) {
+                    $("cardsTbody").innerHTML = `<tr><td colspan="8" class="small">No cards saved yet.</td></tr>`;
+                  }
+                } catch (err) {
+                  dbg("polling error", { code: err?.code, message: err?.message });
+                }
+              };
+              runPoll();
+              pollingTimer = setInterval(runPoll, 10000); // poll every 10s
+            }
+          );
+        } catch (err) {
+          dbg("onSnapshot setup error", { message: err?.message });
+        }
+      }
+
+      $("cardsTbody").addEventListener("click", async (e) => {
+        const btn = e.target.closest("button"); if (!btn) return;
+        const id = btn.getAttribute("data-id");
+        const action = btn.getAttribute("data-action");
+        if (action === "delete") {
+          if (confirm("Delete this card?")) await deleteDoc(doc(db, `users/${currentUid}/cards`, id));
+        } else if (action === "edit") {
+          const data = cache.get(id); if (data) enterEdit(id, data);
+        }
+      });
+
+      // Auth: smart sign-in (redirect on mobile; popup on desktop w/ fallback)
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: "select_account" });
+
+      async function signInSmart() {
+        try {
+          if (isMobile) {
+            dbg("sign-in", { mode: "redirect", inApp: isInAppBrowser });
+            await signInWithRedirect(auth, provider);
+            return;
+          }
+          dbg("sign-in", { mode: "popup" });
+          await signInWithPopup(auth, provider);
+        } catch (e) {
+          if (e?.code === 'auth/popup-closed-by-user' ||
+              e?.code === 'auth/popup-blocked' ||
+              e?.code === 'auth/cancelled-popup-request') {
+            dbg("popup failed -> redirect", { code: e.code });
+            await signInWithRedirect(auth, provider);
+          } else {
+            dbg("sign-in error", { code: e?.code, message: e?.message });
+            alert(e.message || e.code || e);
+          }
+        }
+      }
+
+      document.getElementById("signInBtn").onclick = signInSmart;
+      document.getElementById("signOutBtn").onclick = () => signOut(auth);
+
+      // Handle redirect result (no top-level await)
       try {
-        if (isMobile) {
-          dbg("sign-in", { mode: "redirect", inApp: isInAppBrowser });
-          await signInWithRedirect(auth, provider);
+        const res = await getRedirectResult(auth);
+        if (res?.user) dbg("redirect result user", { uid: res.user.uid, email: res.user.email });
+      } catch (e) {
+        dbg("redirect error", { code: e?.code, message: e?.message });
+      }
+
+      onAuthStateChanged(auth, (user) => {
+        dbg("auth state", { uid: user?.uid || null });
+        if (unsubscribe) { try { unsubscribe(); } catch {} unsubscribe = null; }
+        if (!user) {
+          currentUid = null;
+          document.getElementById("userInfo").textContent = "Not signed in";
+          document.getElementById("signInBtn").classList.remove("hidden");
+          document.getElementById("signOutBtn").classList.add("hidden");
+          document.getElementById("saveBtn").classList.add("hidden");
+          document.getElementById("updateBtn").classList.add("hidden");
+          document.getElementById("cancelEditBtn").classList.add("hidden");
+          document.getElementById("cardsTbody").innerHTML =
+            `<tr><td colspan="8" class="small">Sign in to see your saved cards.</td></tr>`;
+          // stop polling if active
+          if (pollingTimer) { clearInterval(pollingTimer); pollingTimer = null; }
           return;
         }
-        dbg("sign-in", { mode: "popup" });
-        await signInWithPopup(auth, provider);
-      } catch (e) {
-        if (e?.code === 'auth/popup-closed-by-user' ||
-            e?.code === 'auth/popup-blocked' ||
-            e?.code === 'auth/cancelled-popup-request') {
-          dbg("popup failed -> redirect", { code: e.code });
-          await signInWithRedirect(auth, provider);
-        } else {
-          dbg("sign-in error", { code: e?.code, message: e?.message });
-          alert(e.message || e.code || e);
-        }
-      }
-    }
+        currentUid = user.uid;
+        document.getElementById("userInfo").textContent =
+          `Signed in as ${user.displayName || user.email || user.uid}`;
+        document.getElementById("signInBtn").classList.add("hidden");
+        document.getElementById("signOutBtn").classList.remove("hidden");
+        document.getElementById("saveBtn").classList.remove("hidden");
 
-    document.getElementById("signInBtn").onclick = signInSmart;
-    document.getElementById("signOutBtn").onclick = () => signOut(auth);
+        startUserListener(currentUid);
+      });
 
-    // Process redirect result on load
-    try {
-      const res = await getRedirectResult(auth);
-      if (res?.user) dbg("redirect result user", { uid: res.user.uid, email: res.user.email });
-    } catch (e) {
-      dbg("redirect error", { code: e?.code, message: e?.message });
-    }
-
-    onAuthStateChanged(auth, (user) => {
-      dbg("auth state", { uid: user?.uid || null });
-      if (unsubscribe) { unsubscribe(); unsubscribe = null; }
-
-      if (!user) {
-        currentUid = null;
-        document.getElementById("userInfo").textContent = "Not signed in";
-        document.getElementById("signInBtn").classList.remove("hidden");
-        document.getElementById("signOutBtn").classList.add("hidden");
-        document.getElementById("saveBtn").classList.add("hidden");
-        document.getElementById("updateBtn").classList.add("hidden");
-        document.getElementById("cancelEditBtn").classList.add("hidden");
-        document.getElementById("cardsTbody").innerHTML =
-          `<tr><td colspan="8" class="small">Sign in to see your saved cards.</td></tr>`;
-        return;
-      }
-
-      // Signed in: force UI + start listener
-      currentUid = user.uid;
-      document.getElementById("userInfo").textContent =
-        `Signed in as ${user.displayName || user.email || user.uid}`;
-      document.getElementById("signInBtn").classList.add("hidden");
-      document.getElementById("signOutBtn").classList.remove("hidden");
-      document.getElementById("saveBtn").classList.remove("hidden");
-      document.getElementById("updateBtn").classList.add("hidden");
-      document.getElementById("cancelEditBtn").classList.add("hidden");
-
-      startUserListener(currentUid);
-    });
-
-    // Initial calc
-    window.addEventListener("DOMContentLoaded", calc);
+      // Initial calc
+      window.addEventListener("DOMContentLoaded", calc);
+    })();
   </script>
 </body>
 </html>
