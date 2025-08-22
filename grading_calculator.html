@@ -2,56 +2,104 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Card Grading Calculator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>Card Grading Calculator (Firebase + Google Auth)</title>
+
+  <!-- Mobile / PWA-friendly meta -->
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
   <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:#0f172a;color:#e5e7eb;margin:0;padding:24px}
-    .wrap{max-width:980px;margin:0 auto}
-    .card{background:#0b1220;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px;margin-bottom:16px}
-    .grid{display:grid;gap:10px}
-    @media(min-width:760px){.grid{grid-template-columns:repeat(3,1fr)}}
-    label{font-size:12px;color:#94a3b8;margin-bottom:4px;display:block}
-    input{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:#0a0f1e;color:#e5e7eb;font-size:14px}
-    button{padding:10px 12px;border:0;border-radius:10px;background:#2563eb;color:#fff;font-weight:600;cursor:pointer}
-    .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+    :root{
+      --bg:#0f172a; --card:#0b1220; --muted:#94a3b8; --text:#e5e7eb;
+      --blue:#2563eb; --green:#16a34a; --red:#dc2626; --border:rgba(255,255,255,.08)
+    }
+    *{box-sizing:border-box}
+    html{font-size:16px}
+    body{
+      margin:0; background:var(--bg); color:var(--text);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .wrap{max-width:980px;margin:0 auto;padding:16px}
+    .hero{ text-align:center; margin:8px 0 16px; }
+    .hero img{ max-width:200px; height:auto; display:block; margin:0 auto 8px; }
+    .card{
+      background:var(--card); border:1px solid var(--border);
+      border-radius:14px; padding:16px; margin-bottom:16px
+    }
+    .authbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:center}
+    .muted{color:var(--muted)}
+    .hidden{display:none !important}
+
+    /* Inputs & buttons */
+    label{display:block;font-size:.8rem;color:var(--muted);margin:6px 0 4px}
+    input{
+      width:100%; padding:12px 14px; border-radius:12px; border:1px solid var(--border);
+      background:#0a0f1e; color:var(--text); font-size:1rem;
+      touch-action:manipulation;
+    }
+    input[type="number"]{appearance:textfield}
+    input::-webkit-outer-spin-button, input::-webkit-inner-spin-button{appearance:none;margin:0}
+
+    button{
+      width:100%; padding:14px; border:0; border-radius:12px; cursor:pointer;
+      background:var(--blue); color:#fff; font-weight:700; font-size:1rem;
+    }
+    .btns{display:grid;grid-template-columns:1fr;gap:10px;margin-top:10px}
     .btn-secondary{background:#334155}
     .btn-danger{background:#dc2626}
-    .pill{padding:2px 8px;border-radius:999px;font-size:12px;font-weight:700}
+
+    /* Grid: 1 column on phones, 3 on larger screens */
+    .grid{display:grid;gap:10px;grid-template-columns:1fr}
+    @media (min-width:760px){ .grid{grid-template-columns:repeat(3,1fr)} .btns{grid-template-columns:repeat(3,1fr)} }
+
+    /* Stats & pills */
+    .stat{
+      display:flex;justify-content:space-between;gap:10px;
+      padding:12px;border:1px solid var(--border);border-radius:12px;background:#0a0f1e;margin-top:8px;
+      font-size:1rem
+    }
+    .pill{padding:2px 10px;border-radius:999px;font-size:.78rem;font-weight:800}
     .good{background:rgba(22,163,74,.15);color:#86efac;border:1px solid rgba(22,163,74,.3)}
     .bad{background:rgba(220,38,38,.15);color:#fecaca;border:1px solid rgba(220,38,38,.3)}
-    .stat{display:flex;justify-content:space-between;padding:10px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:#0a0f1e;margin-top:8px}
-    table{width:100%;border-collapse:collapse;margin-top:8px}
-    th,td{padding:10px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left;font-size:14px;vertical-align:middle}
-    th{color:#94a3b8;font-weight:600}
-    .small{font-size:12px;color:#94a3b8}
-    .authbar{display:flex;align-items:center;gap:10px;margin-bottom:12px}
-    .muted{color:#94a3b8}
-    .hidden{display:none !important}
+    .small{font-size:.85rem;color:var(--muted)}
+
+    /* Table: horizontally scrollable on small screens */
+    .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    table{width:100%;border-collapse:collapse;min-width:680px}
+    th,td{padding:12px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left;font-size:.95rem;white-space:nowrap;vertical-align:middle}
+    th{color:var(--muted);font-weight:700}
+    .actions{display:flex;gap:8px}
   </style>
 </head>
 <body>
-	<div style="text-align:center; margin-bottom:20px;">
-	  <img src="logo.png" alt="Card Grading Calculator Logo" style="max-width:220px; height:auto;">
-	  <h1 style="margin:10px 0; font-size:24px;">Card Grading Calculator</h1>
-	</div>
-	
   <div class="wrap">
-    <div class="card authbar">
-      <div id="userInfo" class="muted">Not signed in</div>
-      <button id="signInBtn">Sign in with Google</button>
-      <button id="signOutBtn" class="btn-secondary hidden">Sign out</button>
+    <!-- Logo + title -->
+    <div class="hero">
+      <img src="logo.png" alt="Card Grading Calculator">
+      <h1 style="margin:0;font-size:1.35rem;">Card Grading Calculator</h1>
     </div>
 
+    <!-- Auth bar -->
+    <div class="card authbar">
+      <div id="userInfo" class="muted">Not signed in</div>
+      <button id="signInBtn" style="max-width:260px">Sign in with Google</button>
+      <button id="signOutBtn" class="btn-secondary hidden" style="max-width:160px">Sign out</button>
+    </div>
+
+    <!-- Calculator -->
     <div class="card">
-      <h3 style="margin:0 0 8px">Card Grading Profit & EV Calculator</h3>
+      <h3 style="margin:0 0 8px">Profit & EV Calculator</h3>
       <div class="grid">
-        <div><label>Card Name</label><input id="cardName" placeholder="e.g., 1991 SkyBox #546 MJ"/></div>
-        <div><label>Raw Price ($)</label><input id="rawPrice" type="number" inputmode="decimal" value="20"/></div>
-        <div><label>Grading Fee ($)</label><input id="gradingFee" type="number" inputmode="decimal" value="21"/></div>
-        <div><label>PSA 9 Price ($)</label><input id="psa9Price" type="number" inputmode="decimal" value="25"/></div>
-        <div><label>PSA 10 Price ($)</label><input id="psa10Price" type="number" inputmode="decimal" value="100"/></div>
-        <div><label>eBay Fee (%)</label><input id="ebayFee" type="number" inputmode="decimal" value="12.5"/></div>
-        <div><label>Gem Rate (%)</label><input id="gemRate" type="number" inputmode="decimal" value="60"/></div>
+        <div><label>Card Name</label><input id="cardName" placeholder="e.g., 1991 SkyBox #546 MJ"></div>
+        <div><label>Raw Price ($)</label><input id="rawPrice" type="number" inputmode="decimal" step="0.01" value="20"></div>
+        <div><label>Grading Fee ($)</label><input id="gradingFee" type="number" inputmode="decimal" step="0.01" value="21"></div>
+        <div><label>PSA 9 Price ($)</label><input id="psa9Price" type="number" inputmode="decimal" step="0.01" value="25"></div>
+        <div><label>PSA 10 Price ($)</label><input id="psa10Price" type="number" inputmode="decimal" step="0.01" value="100"></div>
+        <div><label>eBay Fee (%)</label><input id="ebayFee" type="number" inputmode="decimal" step="0.1" value="12.5"></div>
+        <div><label>Gem Rate (%)</label><input id="gemRate" type="number" inputmode="decimal" step="1" value="60"></div>
       </div>
 
       <div class="btns">
@@ -74,20 +122,23 @@
       <div class="small">Sign in to save, edit, and delete your cards (private to your account).</div>
     </div>
 
+    <!-- Live list -->
     <div class="card">
       <h3 style="margin:4px 0 8px">Saved Cards (Live)</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Card</th><th>Raw</th><th>9</th><th>10</th><th>Gem%</th><th>EV</th><th>Decision</th><th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="cardsTbody"><tr><td colspan="8" class="small">Sign in to see your saved cards.</td></tr></tbody>
-      </table>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Card</th><th>Raw</th><th>9</th><th>10</th><th>Gem%</th><th>EV</th><th>Decision</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="cardsTbody"><tr><td colspan="8" class="small">Sign in to see your saved cards.</td></tr></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
-  <!-- One single module script. No npm imports, no duplicate init. -->
+  <!-- Single module script: Auth + Firestore + UI -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
     import { 
@@ -98,7 +149,7 @@
       getAuth, onAuthStateChanged, signInWithPopup, signInWithRedirect, GoogleAuthProvider, signOut
     } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
-    // Your actual config
+    // Your Firebase config (from Firebase Console → SDK setup & configuration)
     const firebaseConfig = {
       apiKey: "AIzaSyBvUBx-QTjTyzv8oWxoCX4rweq72yChS3M",
       authDomain: "grading-calculator-ce36f.firebaseapp.com",
@@ -109,7 +160,7 @@
       measurementId: "G-GRKKZPC8VV"
     };
 
-    // Init once
+    // Init Firebase once
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
@@ -118,8 +169,6 @@
     const $ = id => document.getElementById(id);
     const money = v => "$" + (Number(v)||0).toFixed(2);
     const pill = (el, ok) => { el.className = "pill " + (ok ? "good" : "bad"); el.textContent = ok ? "PROFIT" : "LOSS"; };
-    function show(el){ el.classList.remove("hidden"); }
-    function hide(el){ el.classList.add("hidden"); }
 
     let unsubscribe = null;
     let currentUid = null;
@@ -161,7 +210,9 @@
 
     function clearEditing() {
       editingId = null;
-      show($("saveBtn")); hide($("updateBtn")); hide($("cancelEditBtn"));
+      $("saveBtn").classList.remove("hidden");
+      $("updateBtn").classList.add("hidden");
+      $("cancelEditBtn").classList.add("hidden");
     }
 
     async function saveNew() {
@@ -208,10 +259,12 @@
       $("ebayFee").value = data.ebayFeePct ? (data.ebayFeePct*100).toFixed(2) : "12.5";
       $("gemRate").value = data.gemRatePct ? (data.gemRatePct*100).toFixed(0) : "60";
       calc();
-      hide($("saveBtn")); show($("updateBtn")); show($("cancelEditBtn"));
+      $("saveBtn").classList.add("hidden");
+      $("updateBtn").classList.remove("hidden");
+      $("cancelEditBtn").classList.remove("hidden");
     }
 
-    // ===== Auth (popup on desktop, redirect on iOS Safari is safer)
+    // ===== Auth
     const provider = new GoogleAuthProvider();
     const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     const signIn = () => isiOS ? signInWithRedirect(auth, provider) : signInWithPopup(auth, provider);
@@ -282,11 +335,13 @@
 
     onAuthStateChanged(auth, (user) => {
       if (unsubscribe) { unsubscribe(); unsubscribe = null; }
-      clearEditing();
+      // reset editing state on auth change
+      editingId = null;
       if (!user) { currentUid = null; setSignedOutUI(); return; }
       currentUid = user.uid; setSignedInUI(user); startUserListener(currentUid);
     });
 
+    // Convenience: compute once on load
     window.addEventListener("DOMContentLoaded", calc);
   </script>
 </body>
