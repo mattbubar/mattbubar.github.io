@@ -146,36 +146,32 @@
       query, orderBy, doc, deleteDoc, updateDoc 
     } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
     import {
-      getAuth, onAuthStateChanged, signInWithPopup, signInWithRedirect, GoogleAuthProvider, signOut
+      getAuth, onAuthStateChanged, signInWithPopup, signInWithRedirect,
+      GoogleAuthProvider, signOut, getRedirectResult
     } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
-    // Your Firebase config (from Firebase Console → SDK setup & configuration)
+    // 🔧 Your Firebase config (copy from Console)
     const firebaseConfig = {
-      apiKey: "AIzaSyBvUBx-QTjTyzv8oWxoCX4rweq72yChS3M",
-      authDomain: "grading-calculator-ce36f.firebaseapp.com",
-      projectId: "grading-calculator-ce36f",
-      storageBucket: "grading-calculator-ce36f.firebasestorage.app",
-      messagingSenderId: "406763572625",
-      appId: "1:406763572625:web:026a965c194d9a3c8cde30",
-      measurementId: "G-GRKKZPC8VV"
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
     };
 
-    // Init Firebase once
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
 
-    // ===== Helpers
+    // ===== DOM helpers =====
     const $ = id => document.getElementById(id);
+    const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     const money = v => "$" + (Number(v)||0).toFixed(2);
     const pill = (el, ok) => { el.className = "pill " + (ok ? "good" : "bad"); el.textContent = ok ? "PROFIT" : "LOSS"; };
 
-    let unsubscribe = null;
-    let currentUid = null;
-    let editingId = null;
-    const cache = new Map();
-
-    // ===== Calculator
+    // ===== Calculator =====
     function calc() {
       const raw = parseFloat($("rawPrice").value)||0;
       const grade = parseFloat($("gradingFee").value)||0;
@@ -208,12 +204,11 @@
     }
     $("calcBtn").addEventListener("click", calc);
 
-    function clearEditing() {
-      editingId = null;
-      $("saveBtn").classList.remove("hidden");
-      $("updateBtn").classList.add("hidden");
-      $("cancelEditBtn").classList.add("hidden");
-    }
+    // ===== Save/Update/Delete =====
+    let unsubscribe = null;
+    let currentUid = null;
+    let editingId = null;
+    const cache = new Map();
 
     async function saveNew() {
       if (!currentUid) { alert("Please sign in first."); return; }
@@ -229,8 +224,10 @@
         decision: r.pass ? "YES" : "NO",
         createdAt: serverTimestamp()
       });
-      alert("Saved ✅"); clearEditing();
+      alert("Saved ✅");
     }
+    $("saveBtn").addEventListener("click", saveNew);
+
     async function updateExisting() {
       if (!editingId || !currentUid) return;
       const name = $("cardName").value.trim();
@@ -243,54 +240,18 @@
         profit9: r.profit9, profit10: r.profit10, ev: r.ev,
         decision: r.pass ? "YES" : "NO",
       });
-      alert("Updated ✅"); clearEditing();
+      alert("Updated ✅");
     }
-    $("saveBtn").addEventListener("click", saveNew);
     $("updateBtn").addEventListener("click", updateExisting);
-    $("cancelEditBtn").addEventListener("click", clearEditing);
 
-    function enterEdit(id, data) {
-      editingId = id;
-      $("cardName").value = data.name || "";
-      $("rawPrice").value = data.raw ?? "";
-      $("gradingFee").value = data.gradingFee ?? "";
-      $("psa9Price").value = data.psa9 ?? "";
-      $("psa10Price").value = data.psa10 ?? "";
-      $("ebayFee").value = data.ebayFeePct ? (data.ebayFeePct*100).toFixed(2) : "12.5";
-      $("gemRate").value = data.gemRatePct ? (data.gemRatePct*100).toFixed(0) : "60";
-      calc();
-      $("saveBtn").classList.add("hidden");
-      $("updateBtn").classList.remove("hidden");
-      $("cancelEditBtn").classList.remove("hidden");
-    }
-
-    // ===== Auth
-    const provider = new GoogleAuthProvider();
-    const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const signIn = () => isiOS ? signInWithRedirect(auth, provider) : signInWithPopup(auth, provider);
-
-    $("signInBtn").addEventListener("click", async () => {
-      try { await signIn(); } catch (e) { alert(e.message || e); }
-    });
-    $("signOutBtn").addEventListener("click", async () => { await signOut(auth); });
-
-    function setSignedOutUI() {
-      $("userInfo").textContent = "Not signed in";
-      $("cardsTbody").innerHTML = `<tr><td colspan="8" class="small">Sign in to see your saved cards.</td></tr>`;
-      $("saveBtn").classList.add("hidden");
+    $("cancelEditBtn").addEventListener("click", () => {
+      editingId = null;
+      $("saveBtn").classList.remove("hidden");
       $("updateBtn").classList.add("hidden");
       $("cancelEditBtn").classList.add("hidden");
-      $("signInBtn").classList.remove("hidden");
-      $("signOutBtn").classList.add("hidden");
-      if (unsubscribe) { unsubscribe(); unsubscribe = null; }
-    }
-    function setSignedInUI(user) {
-      $("userInfo").textContent = `Signed in as ${user.displayName || user.email}`;
-      $("saveBtn").classList.remove("hidden");
-      $("signInBtn").classList.add("hidden");
-      $("signOutBtn").classList.remove("hidden");
-    }
+    });
 
+    // ===== Table rendering =====
     function startUserListener(uid) {
       const q = query(collection(db, `users/${uid}/cards`), orderBy("createdAt","desc"));
       unsubscribe = onSnapshot(q, (snap) => {
@@ -308,7 +269,7 @@
             <td>${Math.round((c.gemRatePct||0)*100)}%</td>
             <td>${money(c.ev || 0)}</td>
             <td><span class="pill ${c.decision==='YES'?'good':'bad'}">${c.decision||'NO'}</span></td>
-            <td class="actions">
+            <td>
               <button class="btn-secondary" data-action="edit" data-id="${docSnap.id}">Edit</button>
               <button class="btn-danger" data-action="delete" data-id="${docSnap.id}">Delete</button>
             </td>
@@ -326,22 +287,62 @@
       const id = btn.getAttribute("data-id");
       const action = btn.getAttribute("data-action");
       if (action === "delete") {
-        if (!currentUid) return;
         if (confirm("Delete this card?")) await deleteDoc(doc(db, `users/${currentUid}/cards`, id));
       } else if (action === "edit") {
-        const data = cache.get(id); if (data) enterEdit(id, data);
+        const data = cache.get(id);
+        if (data) {
+          editingId = id;
+          $("cardName").value = data.name || "";
+          $("rawPrice").value = data.raw ?? "";
+          $("gradingFee").value = data.gradingFee ?? "";
+          $("psa9Price").value = data.psa9 ?? "";
+          $("psa10Price").value = data.psa10 ?? "";
+          $("ebayFee").value = data.ebayFeePct ? (data.ebayFeePct*100).toFixed(2) : "12.5";
+          $("gemRate").value = data.gemRatePct ? (data.gemRatePct*100).toFixed(0) : "60";
+          calc();
+          $("saveBtn").classList.add("hidden");
+          $("updateBtn").classList.remove("hidden");
+          $("cancelEditBtn").classList.remove("hidden");
+        }
       }
     });
 
+    // ===== Auth =====
+    async function doSignIn() {
+      try {
+        if (isiOS) {
+          await signInWithRedirect(auth, provider);
+          await getRedirectResult(auth);
+        } else {
+          await signInWithPopup(auth, provider);
+        }
+      } catch (err) {
+        alert(err.message || err);
+      }
+    }
+    $("signInBtn").onclick = doSignIn;
+    $("signOutBtn").onclick = () => signOut(auth);
+
     onAuthStateChanged(auth, (user) => {
       if (unsubscribe) { unsubscribe(); unsubscribe = null; }
-      // reset editing state on auth change
-      editingId = null;
-      if (!user) { currentUid = null; setSignedOutUI(); return; }
-      currentUid = user.uid; setSignedInUI(user); startUserListener(currentUid);
+      if (!user) {
+        currentUid = null;
+        $("userInfo").textContent = "Not signed in";
+        $("signInBtn").classList.remove("hidden");
+        $("signOutBtn").classList.add("hidden");
+        $("saveBtn").classList.add("hidden");
+        $("cardsTbody").innerHTML = `<tr><td colspan="8" class="small">Sign in to see your saved cards.</td></tr>`;
+        return;
+      }
+      currentUid = user.uid;
+      $("userInfo").textContent = `Signed in as ${user.displayName || user.email}`;
+      $("signInBtn").classList.add("hidden");
+      $("signOutBtn").classList.remove("hidden");
+      $("saveBtn").classList.remove("hidden");
+      startUserListener(currentUid);
     });
 
-    // Convenience: compute once on load
+    // run calc on load
     window.addEventListener("DOMContentLoaded", calc);
   </script>
 </body>
