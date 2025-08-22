@@ -216,6 +216,13 @@
       }
     }
 
+	// --- storage/cookie diagnostics (iOS Safari troubleshooter) ---
+	try { localStorage.setItem('_t','1'); localStorage.removeItem('_t'); dbg('localStorage','ok'); } catch(e){ dbg('localStorage','blocked'); }
+	try { sessionStorage.setItem('_t','1'); sessionStorage.removeItem('_t'); dbg('sessionStorage','ok'); } catch(e){ dbg('sessionStorage','blocked'); }
+	// test first-party cookie (requires https)
+	document.cookie = "t=1; path=/; SameSite=Lax; Secure";
+	dbg('cookie', document.cookie.includes('t=1') ? 'ok' : 'blocked');
+
     // ---- UI helpers ----
     const $ = id => document.getElementById(id);
     const money = v => "$" + (Number(v)||0).toFixed(2);
