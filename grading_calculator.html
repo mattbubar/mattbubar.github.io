@@ -136,10 +136,10 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import { 
-      getFirestore, collection, addDoc, serverTimestamp, onSnapshot, 
-      query, orderBy, doc, deleteDoc, updateDoc 
-    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+	import { 
+	  getFirestore, collection, addDoc, serverTimestamp, onSnapshot, 
+	  query, orderBy, doc, deleteDoc, updateDoc 
+	} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
     import {
       getAuth, onAuthStateChanged, signInWithPopup, signInWithRedirect,
       GoogleAuthProvider, signOut, getRedirectResult,
@@ -167,7 +167,11 @@
     };
 
     const app = initializeApp(firebaseConfig);
-    const db  = getFirestore(app);
+	const db = initializeFirestore(app, {
+	  // Most reliable on iOS Safari if any content/cross-site blockers are active
+	  experimentalForceLongPolling: true,
+	  useFetchStreams: false,
+	});
     const auth = getAuth(app);
     auth.useDeviceLanguage?.();
 
