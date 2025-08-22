@@ -312,5 +312,29 @@ const analytics = getAnalytics(app);
     // Convenience: compute once on load
     window.addEventListener("DOMContentLoaded", calc);
   </script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+
+    // Paste your SDK setup & configuration here:
+    const firebaseConfig = { /* <-- your values from SDK setup & configuration */ };
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    const provider = new GoogleAuthProvider();
+    const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const signIn = () => isiOS ? signInWithRedirect(auth, provider) : signInWithPopup(auth, provider);
+
+    document.getElementById("signInBtn").onclick = async () => {
+      try { await signIn(); } catch (e) { alert(e.message || e); }
+    };
+    document.getElementById("signOutBtn").onclick = () => signOut(auth);
+
+    onAuthStateChanged(auth, user => {
+      // Update UI based on user
+      console.log("user:", user?.uid || null);
+    });
+  </script>
+	
 </body>
 </html>
