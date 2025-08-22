@@ -142,7 +142,9 @@
     } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
     import {
       getAuth, onAuthStateChanged, signInWithPopup, signInWithRedirect,
-      GoogleAuthProvider, signOut, getRedirectResult
+      GoogleAuthProvider, signOut, getRedirectResult,
+      // NEW imports for persistence:
+      setPersistence, browserLocalPersistence, browserSessionPersistence, inMemoryPersistence
     } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
     // --- Debug helper ---
@@ -169,6 +171,24 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
     auth.useDeviceLanguage?.();
+
+    // Log origin & authDomain (helps catch domain issues)
+    dbg("origin", location.origin);
+    dbg("authDomain", auth.config?.authDomain || "(none)");
+
+    // Force persistent auth with graceful fallbacks
+    try {
+      await setPersistence(auth, browserLocalPersistence);
+      dbg("persistence", "local");
+    } catch {
+      try {
+        await setPersistence(auth, browserSessionPersistence);
+        dbg("persistence", "session");
+      } catch {
+        await setPersistence(auth, inMemoryPersistence);
+        dbg("persistence", "inMemory");
+      }
+    }
 
     // Helpers
     const $ = id => document.getElementById(id);
@@ -316,64 +336,72 @@
       }
     });
 
-    // ----- Auth: redirect on mobile (and handle result), popup on desktop -----
+    // ----- Auth: smart sign-in (popup with fallback; redirect on mobile) -----
     const provider = new GoogleAuthProvider();
 
-    document.getElementById("signInBtn").onclick = async () => {
+    async function signInSmart() {
       try {
         if (isMobile) {
           dbg("sign-in", "redirect");
           await signInWithRedirect(auth, provider);
-          // Redirect to Google; returns to this page after consent
-        } else {
-          dbg("sign-in", "popup");
-          await signInWithPopup(auth, provider);
+          return;
         }
+        dbg("sign-in", "popup");
+        await signInWithPopup(auth, provider);
       } catch (e) {
-        dbg("sign-in error", { code: e?.code, message: e?.message });
-        alert(e.message || e);
+        // fallback to redirect for common popup issues
+        if (e?.code === 'auth/popup-closed-by-user' ||
+            e?.code === 'auth/popup-blocked' ||
+            e?.code === 'auth/cancelled-popup-request') {
+          dbg("popup failed, fallback to redirect", { code: e.code });
+          await signInWithRedirect(auth, provider);
+        } else {
+          dbg("sign-in error", { code: e?.code, message: e?.message });
+          alert(e.message || e.code || e);
+        }
       }
-    };
-
-    // Process redirect result on load (mobile)
-    try {
-      const res = await getRedirectResult(auth);
-      if (res?.user) dbg("redirect result", { uid: res.user.uid });
-    } catch (e) {
-      dbg("redirect error", { code: e?.code, message: e?.message });
-      // alert optional: alert("Sign-in error: " + (e.message || e.code || e));
     }
 
+    document.getElementById("signInBtn").onclick = signInSmart;
     document.getElementById("signOutBtn").onclick = () => signOut(auth);
 
-	onAuthStateChanged(auth, (user) => {
-	  dbg("auth state", { uid: user?.uid || null });
-	  if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+    // Process redirect result on load (mobile & fallback path)
+    try {
+      const res = await getRedirectResult(auth);
+      if (res?.user) dbg("redirect result user", { uid: res.user.uid, email: res.user.email });
+    } catch (e) {
+      dbg("redirect error", { code: e?.code, message: e?.message });
+    }
 
-	  if (!user) {
-	    currentUid = null;
-	    document.getElementById("userInfo").textContent = "Not signed in";
-	    document.getElementById("signInBtn").classList.remove("hidden");
-	    document.getElementById("signOutBtn").classList.add("hidden");
-	    document.getElementById("saveBtn").classList.add("hidden");
-	    document.getElementById("updateBtn").classList.add("hidden");
-	    document.getElementById("cancelEditBtn").classList.add("hidden");
-	    document.getElementById("cardsTbody").innerHTML =
-	      `<tr><td colspan="8" class="small">Sign in to see your saved cards.</td></tr>`;
-	    return;
-	  }
+    onAuthStateChanged(auth, (user) => {
+      dbg("auth state", { uid: user?.uid || null });
+      if (unsubscribe) { unsubscribe(); unsubscribe = null; }
 
-	  // Signed in: force UI + start listener
-	  currentUid = user.uid;
-	  document.getElementById("userInfo").textContent = `Signed in as ${user.displayName || user.email || user.uid}`;
-	  document.getElementById("signInBtn").classList.add("hidden");
-	  document.getElementById("signOutBtn").classList.remove("hidden");
-	  document.getElementById("saveBtn").classList.remove("hidden");
-	  document.getElementById("updateBtn").classList.add("hidden");
-	  document.getElementById("cancelEditBtn").classList.add("hidden");
+      if (!user) {
+        currentUid = null;
+        document.getElementById("userInfo").textContent = "Not signed in";
+        document.getElementById("signInBtn").classList.remove("hidden");
+        document.getElementById("signOutBtn").classList.add("hidden");
+        document.getElementById("saveBtn").classList.add("hidden");
+        document.getElementById("updateBtn").classList.add("hidden");
+        document.getElementById("cancelEditBtn").classList.add("hidden");
+        document.getElementById("cardsTbody").innerHTML =
+          `<tr><td colspan="8" class="small">Sign in to see your saved cards.</td></tr>`;
+        return;
+      }
 
-	  startUserListener(currentUid);
-	});
+      // Signed in: force UI + start listener
+      currentUid = user.uid;
+      document.getElementById("userInfo").textContent =
+        `Signed in as ${user.displayName || user.email || user.uid}`;
+      document.getElementById("signInBtn").classList.add("hidden");
+      document.getElementById("signOutBtn").classList.remove("hidden");
+      document.getElementById("saveBtn").classList.remove("hidden");
+      document.getElementById("updateBtn").classList.add("hidden");
+      document.getElementById("cancelEditBtn").classList.add("hidden");
+
+      startUserListener(currentUid);
+    });
 
     // Initial calc
     window.addEventListener("DOMContentLoaded", calc);
