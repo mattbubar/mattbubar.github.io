@@ -82,28 +82,7 @@
     </div>
   </div>
 
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyBvUBx-QTjTyzv8oWxoCX4rweq72yChS3M",
-  authDomain: "grading-calculator-ce36f.firebaseapp.com",
-  projectId: "grading-calculator-ce36f",
-  storageBucket: "grading-calculator-ce36f.firebasestorage.app",
-  messagingSenderId: "406763572625",
-  appId: "1:406763572625:web:026a965c194d9a3c8cde30",
-  measurementId: "G-GRKKZPC8VV"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-  <!-- Firebase (module style) -->
+  <!-- One single module script. No npm imports, no duplicate init. -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
     import { 
@@ -111,36 +90,38 @@ const analytics = getAnalytics(app);
       query, orderBy, doc, deleteDoc, updateDoc 
     } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
     import {
-      getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut
+      getAuth, onAuthStateChanged, signInWithPopup, signInWithRedirect, GoogleAuthProvider, signOut
     } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
-    // 🔧 REPLACE with your Firebase config
+    // Your actual config
     const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_PROJECT_ID.appspot.com",
-      messagingSenderId: "YOUR_SENDER_ID",
-      appId: "YOUR_APP_ID"
+      apiKey: "AIzaSyBvUBx-QTjTyzv8oWxoCX4rweq72yChS3M",
+      authDomain: "grading-calculator-ce36f.firebaseapp.com",
+      projectId: "grading-calculator-ce36f",
+      storageBucket: "grading-calculator-ce36f.firebasestorage.app",
+      messagingSenderId: "406763572625",
+      appId: "1:406763572625:web:026a965c194d9a3c8cde30",
+      measurementId: "G-GRKKZPC8VV"
     };
 
+    // Init once
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // ===== DOM helpers =====
+    // ===== Helpers
     const $ = id => document.getElementById(id);
     const money = v => "$" + (Number(v)||0).toFixed(2);
     const pill = (el, ok) => { el.className = "pill " + (ok ? "good" : "bad"); el.textContent = ok ? "PROFIT" : "LOSS"; };
     function show(el){ el.classList.remove("hidden"); }
     function hide(el){ el.classList.add("hidden"); }
 
-    let unsubscribe = null;        // Firestore live query unsub
-    let currentUid = null;         // signed-in user's UID
-    let editingId = null;          // doc id being edited
-    const cache = new Map();       // id -> data for quick edit fill
+    let unsubscribe = null;
+    let currentUid = null;
+    let editingId = null;
+    const cache = new Map();
 
-    // ===== Calculator =====
+    // ===== Calculator
     function calc() {
       const raw = parseFloat($("rawPrice").value)||0;
       const grade = parseFloat($("gradingFee").value)||0;
@@ -171,7 +152,6 @@ const analytics = getAnalytics(app);
 
       return { raw, grade, p9, p10, feePct: fee, gemPct: gem, cost, net9, net10, profit9, profit10, ev, pass };
     }
-
     $("calcBtn").addEventListener("click", calc);
 
     function clearEditing() {
@@ -195,7 +175,6 @@ const analytics = getAnalytics(app);
       });
       alert("Saved ✅"); clearEditing();
     }
-
     async function updateExisting() {
       if (!editingId || !currentUid) return;
       const name = $("cardName").value.trim();
@@ -210,7 +189,6 @@ const analytics = getAnalytics(app);
       });
       alert("Updated ✅"); clearEditing();
     }
-
     $("saveBtn").addEventListener("click", saveNew);
     $("updateBtn").addEventListener("click", updateExisting);
     $("cancelEditBtn").addEventListener("click", clearEditing);
@@ -228,29 +206,33 @@ const analytics = getAnalytics(app);
       hide($("saveBtn")); show($("updateBtn")); show($("cancelEditBtn"));
     }
 
-    // ===== Auth UI =====
+    // ===== Auth (popup on desktop, redirect on iOS Safari is safer)
+    const provider = new GoogleAuthProvider();
+    const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const signIn = () => isiOS ? signInWithRedirect(auth, provider) : signInWithPopup(auth, provider);
+
     $("signInBtn").addEventListener("click", async () => {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      try { await signIn(); } catch (e) { alert(e.message || e); }
     });
     $("signOutBtn").addEventListener("click", async () => { await signOut(auth); });
 
     function setSignedOutUI() {
       $("userInfo").textContent = "Not signed in";
-      show($("signInBtn")); hide($("signOutBtn"));
-      hide($("saveBtn")); hide($("updateBtn")); hide($("cancelEditBtn"));
-      // clear table & unsubscribe
-      if (unsubscribe) { unsubscribe(); unsubscribe = null; }
       $("cardsTbody").innerHTML = `<tr><td colspan="8" class="small">Sign in to see your saved cards.</td></tr>`;
+      $("saveBtn").classList.add("hidden");
+      $("updateBtn").classList.add("hidden");
+      $("cancelEditBtn").classList.add("hidden");
+      $("signInBtn").classList.remove("hidden");
+      $("signOutBtn").classList.add("hidden");
+      if (unsubscribe) { unsubscribe(); unsubscribe = null; }
     }
-
     function setSignedInUI(user) {
       $("userInfo").textContent = `Signed in as ${user.displayName || user.email}`;
-      hide($("signInBtn")); show($("signOutBtn"));
-      show($("saveBtn")); // enable saving
+      $("saveBtn").classList.remove("hidden");
+      $("signInBtn").classList.add("hidden");
+      $("signOutBtn").classList.remove("hidden");
     }
 
-    // Live query for a user
     function startUserListener(uid) {
       const q = query(collection(db, `users/${uid}/cards`), orderBy("createdAt","desc"));
       unsubscribe = onSnapshot(q, (snap) => {
@@ -281,60 +263,26 @@ const analytics = getAnalytics(app);
       });
     }
 
-    // Actions in table
     $("cardsTbody").addEventListener("click", async (e) => {
       const btn = e.target.closest("button"); if (!btn) return;
       const id = btn.getAttribute("data-id");
       const action = btn.getAttribute("data-action");
       if (action === "delete") {
+        if (!currentUid) return;
         if (confirm("Delete this card?")) await deleteDoc(doc(db, `users/${currentUid}/cards`, id));
       } else if (action === "edit") {
         const data = cache.get(id); if (data) enterEdit(id, data);
       }
     });
 
-    // Auth state listener
     onAuthStateChanged(auth, (user) => {
-      // clean up any previous listener
       if (unsubscribe) { unsubscribe(); unsubscribe = null; }
       clearEditing();
-
-      if (!user) {
-        currentUid = null;
-        setSignedOutUI();
-        return;
-      }
-      currentUid = user.uid;
-      setSignedInUI(user);
-      startUserListener(currentUid);
+      if (!user) { currentUid = null; setSignedOutUI(); return; }
+      currentUid = user.uid; setSignedInUI(user); startUserListener(currentUid);
     });
 
-    // Convenience: compute once on load
     window.addEventListener("DOMContentLoaded", calc);
   </script>
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-
-    // Paste your SDK setup & configuration here:
-    const firebaseConfig = { /* <-- your values from SDK setup & configuration */ };
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-
-    const provider = new GoogleAuthProvider();
-    const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const signIn = () => isiOS ? signInWithRedirect(auth, provider) : signInWithPopup(auth, provider);
-
-    document.getElementById("signInBtn").onclick = async () => {
-      try { await signIn(); } catch (e) { alert(e.message || e); }
-    };
-    document.getElementById("signOutBtn").onclick = () => signOut(auth);
-
-    onAuthStateChanged(auth, user => {
-      // Update UI based on user
-      console.log("user:", user?.uid || null);
-    });
-  </script>
-	
 </body>
 </html>
