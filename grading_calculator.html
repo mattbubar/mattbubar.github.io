@@ -66,6 +66,9 @@
     th,td{padding:12px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left;font-size:.95rem;white-space:nowrap;vertical-align:middle}
     th{color:var(--muted);font-weight:700}
     .actions{display:flex;gap:8px}
+
+    /* debug bar (optional) */
+    #debug{white-space:pre-wrap;font:12px/1.45 ui-monospace,Menlo,monospace;background:#111827;color:#e5e7eb;border:1px solid #334155;border-radius:10px;padding:10px;margin:16px 0}
   </style>
 </head>
 <body>
@@ -126,6 +129,9 @@
         </table>
       </div>
     </div>
+
+    <!-- Debug panel (optional, helps on mobile) -->
+    <div id="debug"><b>Debug</b></div>
   </div>
 
   <script type="module">
@@ -138,6 +144,15 @@
       getAuth, onAuthStateChanged, signInWithPopup, signInWithRedirect,
       GoogleAuthProvider, signOut, getRedirectResult
     } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+
+    // --- Debug helper ---
+    const dbg = (msg, data) => {
+      const el = document.getElementById('debug');
+      if (!el) return;
+      const line = `[${new Date().toLocaleTimeString()}] ${msg} ${data ? JSON.stringify(data) : ""}`;
+      el.textContent += (el.textContent ? "\n" : "") + line;
+      console.log(line);
+    };
 
     // Your real Firebase config
     const firebaseConfig = {
@@ -155,13 +170,13 @@
     const auth = getAuth(app);
     auth.useDeviceLanguage?.();
 
-    // ---------- Helpers ----------
+    // Helpers
     const $ = id => document.getElementById(id);
     const money = v => "$" + (Number(v)||0).toFixed(2);
     const pill = (el, ok) => { el.className = "pill " + (ok ? "good" : "bad"); el.textContent = ok ? "PROFIT" : "LOSS"; };
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-    // ---------- Calculator ----------
+    // Calculator
     function calc() {
       const raw = parseFloat($("rawPrice").value)||0;
       const grade = parseFloat($("gradingFee").value)||0;
@@ -193,7 +208,7 @@
     }
     $("calcBtn").addEventListener("click", calc);
 
-    // ---------- Save/Update/Delete ----------
+    // Save/Update/Delete
     let unsubscribe = null, currentUid = null, editingId = null;
     const cache = new Map();
 
@@ -301,21 +316,38 @@
       }
     });
 
-    // ---------- Auth (popup desktop, redirect mobile) ----------
+    // ----- Auth: redirect on mobile (and handle result), popup on desktop -----
     const provider = new GoogleAuthProvider();
+
     document.getElementById("signInBtn").onclick = async () => {
       try {
         if (isMobile) {
+          dbg("sign-in", "redirect");
           await signInWithRedirect(auth, provider);
-          await getRedirectResult(auth);
+          // Redirect to Google; returns to this page after consent
         } else {
+          dbg("sign-in", "popup");
           await signInWithPopup(auth, provider);
         }
-      } catch (e) { alert(e.message || e); }
+      } catch (e) {
+        dbg("sign-in error", { code: e?.code, message: e?.message });
+        alert(e.message || e);
+      }
     };
+
+    // Process redirect result on load (mobile)
+    try {
+      const res = await getRedirectResult(auth);
+      if (res?.user) dbg("redirect result", { uid: res.user.uid });
+    } catch (e) {
+      dbg("redirect error", { code: e?.code, message: e?.message });
+      // alert optional: alert("Sign-in error: " + (e.message || e.code || e));
+    }
+
     document.getElementById("signOutBtn").onclick = () => signOut(auth);
 
     onAuthStateChanged(auth, (user) => {
+      dbg("auth state", { uid: user?.uid || null });
       if (unsubscribe) { unsubscribe(); unsubscribe = null; }
       if (!user) {
         currentUid = null;
@@ -323,6 +355,8 @@
         document.getElementById("signInBtn").classList.remove("hidden");
         document.getElementById("signOutBtn").classList.add("hidden");
         document.getElementById("saveBtn").classList.add("hidden");
+        document.getElementById("updateBtn").classList.add("hidden");
+        document.getElementById("cancelEditBtn").classList.add("hidden");
         document.getElementById("cardsTbody").innerHTML =
           `<tr><td colspan="8" class="small">Sign in to see your saved cards.</td></tr>`;
         return;
@@ -335,6 +369,7 @@
       startUserListener(currentUid);
     });
 
+    // Initial calc
     window.addEventListener("DOMContentLoaded", calc);
   </script>
 </body>
