@@ -3,432 +3,227 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Grading Calculator • Classic</title>
+  <title>Grading Calculator</title>
   <style>
-    :root { --border:#e5e7eb; --muted:#6b7280; --ok:#10b981; --bad:#ef4444; --chip:#f3f4f6; }
-    *{ box-sizing: border-box; }
-    body{ font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; max-width: 1000px; margin:24px auto; padding:0 16px; }
-    h1{ font-size:22px; margin:0 0 12px; }
-    .card{ border:1px solid var(--border); border-radius:14px; padding:18px; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.05); }
-    .muted{ color:var(--muted); font-size:12px; }
-    .row{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-    .hidden{ display:none; }
-    input[type="text"], input[type="number"]{ width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:10px; }
-    label{ font-size:12px; color:#374151; }
-    .btn{ padding:10px 14px; border:0; border-radius:10px; cursor:pointer; }
-    .btn.primary{ background:#000; color:#fff; }
-    .btn.ghost{ background:#f3f4f6; }
-    table{ width:100%; border-collapse:collapse; }
-    th,td{ padding:10px; border-bottom:1px solid var(--border); font-size:14px; }
-    th{ text-align:left; background:#fafafa; position:sticky; top:0; }
-    .right{ text-align:right; }
-    .pill{ display:inline-block; padding:2px 8px; border-radius:999px; background:var(--chip); font-size:12px; }
-    .badge{ display:inline-block; padding:4px 10px; border-radius:999px; font-weight:600; }
-    .badge.ok{ background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; }
-    .badge.bad{ background:#fef2f2; color:#991b1b; border:1px solid #fecaca; }
-    .grid{ display:grid; gap:12px; }
-    @media (min-width:960px){
-      .cols-3{ grid-template-columns: repeat(3, 1fr); }
-      .cols-4{ grid-template-columns: repeat(4, 1fr); }
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: #e0f2fe; /* light blue background */
+      margin: 0; padding: 0;
     }
+    main {
+      max-width: 700px;
+      margin: 40px auto;
+      padding: 20px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 { margin-top: 0; text-align: center; }
+    .card { margin: 20px 0; }
+    label { font-size: 14px; display:block; margin-bottom:4px; }
+    input[type="number"], input[type="text"], input[type="email"] {
+      width: 100%; padding: 8px; border: 1px solid #d1d5db;
+      border-radius: 8px; margin-bottom: 12px;
+    }
+    button { padding: 10px 16px; border: none; border-radius: 8px; cursor: pointer; }
+    .primary { background:#2563eb; color:white; }
+    .ghost { background:#f3f4f6; }
+    .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .muted { font-size: 12px; color:#6b7280; }
+    table { width:100%; border-collapse:collapse; margin-top:16px; }
+    th,td { padding:8px; border-bottom:1px solid #e5e7eb; font-size:14px; }
+    th { text-align:left; background:#f9fafb; }
+    .right { text-align:right; }
   </style>
 </head>
 <body>
-  <h1>Grading Calculator</h1>
+  <main>
+    <h1>Grading Calculator</h1>
 
-  <!-- ===== SIGN IN ===== -->
-  <div class="card" id="step-send">
-    <label for="email">Email</label>
-    <input id="email" type="email" placeholder="you@example.com" autocomplete="email" />
-    <div class="row">
-      <button class="btn primary" id="sendLink">Send magic link</button>
+    <!-- Sign-in -->
+    <div id="step-send" class="card">
+      <label>Email</label>
+      <input id="email" type="email" placeholder="you@example.com" />
+      <button class="primary" id="sendLink">Send magic link</button>
       <span class="muted" id="sendStatus"></span>
     </div>
-    <p class="muted">No password needed. We’ll email you a one-tap sign-in link.</p>
-  </div>
-
-  <div class="card hidden" id="step-complete">
-    <p>Finishing sign-in…</p>
-    <div id="needEmail" class="hidden">
-      <p class="muted">Open on a different device? Confirm your email:</p>
-      <input id="confirmEmail" type="email" placeholder="you@example.com" autocomplete="email" />
-      <div class="row">
-        <button class="btn primary" id="finishWithEmail">Finish sign-in</button>
-        <span class="muted" id="finishStatus"></span>
+    <div id="step-complete" class="card hidden">
+      <p>Finishing sign-in…</p>
+      <div id="needEmail" class="hidden">
+        <input id="confirmEmail" type="email" placeholder="Confirm your email" />
+        <button class="primary" id="finishWithEmail">Finish</button>
+        <span id="finishStatus" class="muted"></span>
       </div>
     </div>
-  </div>
-
-  <div class="card hidden" id="authed">
-    <div class="row" style="justify-content:space-between;">
-      <div>Signed in as <strong id="who"></strong></div>
-      <div class="row">
-        <span class="pill" id="projInfo"></span>
-        <button class="btn ghost" id="signOut">Sign out</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===== APP (hidden until auth) ===== -->
-  <div id="app" class="hidden grid" style="gap:16px;">
-
-    <!-- Inputs (classic layout) -->
-    <div class="card">
-      <div class="grid cols-4">
-        <div>
-          <label>Card</label>
-          <input id="cardName" type="text" placeholder="1991 SkyBox S2 #546 MJ" />
-        </div>
-        <div>
-          <label>Raw cost ($)</label>
-          <input id="rawCost" type="number" step="0.01" value="12.00" />
-        </div>
-        <div>
-          <label>Grading fee ($)</label>
-          <input id="gradeFee" type="number" step="0.01" value="19.00" />
-        </div>
-        <div>
-          <label>Other costs ($)</label>
-          <input id="otherCost" type="number" step="0.01" value="0.00" />
-        </div>
-
-        <div>
-          <label>PSA 10 sale ($)</label>
-          <input id="price10" type="number" step="0.01" value="120.00" />
-        </div>
-        <div>
-          <label>PSA 9 sale ($)</label>
-          <input id="price9" type="number" step="0.01" value="35.00" />
-        </div>
-        <div>
-          <label>eBay fee %</label>
-          <input id="feePct" type="number" step="0.1" value="12.5" />
-        </div>
-        <div>
-          <label>Qty</label>
-          <input id="qty" type="number" step="1" value="1" />
-        </div>
-
-        <div>
-          <label>Gem rate %</label>
-          <input id="gemRate" type="number" step="0.1" value="60" />
-        </div>
-        <div>
-          <label>Gem threshold %</label>
-          <input id="gemThresh" type="number" step="0.1" value="60" />
-        </div>
-        <div>
-          <label>Min EV to grade ($)</label>
-          <input id="minEV" type="number" step="0.01" value="0" />
-        </div>
-        <div>
-          <label>&nbsp;</label>
-          <div class="row">
-            <button class="btn primary" id="calcBtn">Calculate</button>
-            <button class="btn ghost" id="resetBtn" type="button">Reset</button>
-            <button class="btn ghost" id="saveBtn" disabled>Save</button>
-            <span class="muted" id="calcStatus"></span>
-          </div>
-        </div>
-      </div>
+    <div id="authed" class="card hidden">
+      Signed in as <strong id="who"></strong>
+      <button id="signOut" class="ghost">Sign out</button>
     </div>
 
-    <!-- Results (classic KPIs + decision) -->
-    <div class="card">
-      <div class="grid cols-4">
-        <div>
-          <div class="muted">EV (per card)</div>
-          <div id="evOut" style="font-size:20px;font-weight:700">$0.00</div>
-        </div>
-        <div>
-          <div class="muted">Profit if PSA 10</div>
-          <div id="p10Out" style="font-size:20px;font-weight:700">$0.00</div>
-        </div>
-        <div>
-          <div class="muted">Profit if PSA 9</div>
-          <div id="p9Out" style="font-size:20px;font-weight:700">$0.00</div>
-        </div>
-        <div>
-          <div class="muted">Net cost per card</div>
-          <div id="netCostOut" style="font-size:20px;font-weight:700">$0.00</div>
-        </div>
-      </div>
-      <div class="row" style="margin-top:10px; justify-content:space-between;">
-        <div>
-          <span class="muted">Breakeven PSA10 price:</span>
-          <strong id="breakeven10Out">$0.00</strong>
-        </div>
-        <div>
-          <span class="muted">Total EV (qty):</span>
-          <strong id="totalEvOut">$0.00</strong>
-        </div>
-        <div id="decisionWrap">
-          <span class="badge bad" id="decision">PASS</span>
-        </div>
-      </div>
-    </div>
+    <!-- Calculator (hidden until auth) -->
+    <div id="app" class="hidden">
+      <div class="card">
+        <label>Card name</label>
+        <input id="cardName" type="text" placeholder="1991 SkyBox #546 MJ" />
+        <label>Raw cost ($)</label>
+        <input id="rawCost" type="number" value="12" />
+        <label>Grading fee ($)</label>
+        <input id="gradeFee" type="number" value="19" />
+        <label>PSA 10 sale price ($)</label>
+        <input id="price10" type="number" value="120" />
+        <label>PSA 9 sale price ($)</label>
+        <input id="price9" type="number" value="35" />
+        <label>Gem rate (%)</label>
+        <input id="gemRate" type="number" value="60" />
+        <label>eBay fee (%)</label>
+        <input id="feePct" type="number" value="12.5" />
+        <label>Other costs ($)</label>
+        <input id="otherCost" type="number" value="0" />
 
-    <!-- Saved list -->
-    <div class="card">
-      <div class="row" style="justify-content:space-between;">
-        <h2 style="margin:0;font-size:18px;">Saved</h2>
-        <span class="muted" id="saveStatus"></span>
+        <button class="primary" id="calcBtn">Calculate</button>
+        <button class="ghost" id="saveBtn" disabled>Save</button>
+        <span id="calcStatus" class="muted"></span>
       </div>
-      <div style="overflow:auto; max-height:420px;">
+
+      <div class="card">
+        <p>EV: <strong id="evOut">$0.00</strong></p>
+        <p>Profit if PSA10: <strong id="p10Out">$0.00</strong></p>
+        <p>Profit if PSA9: <strong id="p9Out">$0.00</strong></p>
+        <p>Net Cost: <strong id="netCostOut">$0.00</strong></p>
+        <p>Total EV: <strong id="totalEvOut">$0.00</strong></p>
+      </div>
+
+      <div class="card">
+        <h3>Saved</h3>
+        <span id="saveStatus" class="muted"></span>
         <table>
           <thead>
-          <tr>
-            <th>When</th>
-            <th>Card</th>
-            <th class="right">EV</th>
-            <th class="right">P10</th>
-            <th class="right">P9</th>
-            <th class="right">Net</th>
-            <th class="right">Gem%</th>
-            <th class="right">Qty</th>
-            <th class="right">Total EV</th>
-            <th></th>
-          </tr>
+            <tr><th>When</th><th>Card</th><th class="right">EV</th><th class="right">P10</th><th class="right">P9</th><th class="right">Net</th><th></th></tr>
           </thead>
           <tbody id="cardsTbody"></tbody>
         </table>
       </div>
     </div>
-  </div>
+  </main>
 
-  <div id="debug" class="muted" style="margin-top:12px;"></div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import {
+  initializeAuth, onAuthStateChanged, signOut, setPersistence,
+  browserLocalPersistence, browserPopupRedirectResolver,
+  isSignInWithEmailLink, sendSignInLinkToEmail, signInWithEmailLink
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+import {
+  initializeFirestore, collection, addDoc, serverTimestamp, onSnapshot,
+  query, orderBy, doc, deleteDoc
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-  <!-- ===== SCRIPT ===== -->
-  <script type="module">
-    // Firebase v11 (CDN)
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import {
-      initializeAuth, onAuthStateChanged, signOut, setPersistence,
-      browserLocalPersistence, browserPopupRedirectResolver,
-      isSignInWithEmailLink, sendSignInLinkToEmail, signInWithEmailLink
-    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-    import {
-      initializeFirestore, collection, addDoc, serverTimestamp, onSnapshot,
-      query, orderBy, doc, deleteDoc
-    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+const firebaseConfig = {
+  apiKey: "AIzaSyBvUBx-QTjTyzv8oWxoCX4rweq72yChS3M",
+  authDomain: "grading-calculator-ce36f.firebaseapp.com",
+  projectId: "grading-calculator-ce36f",
+  messagingSenderId: "406763572625",
+  appId: "1:406763572625:web:026a965c194d9a3c8cde30",
+};
+const app = initializeApp(firebaseConfig);
+const auth = initializeAuth(app, { persistence: browserLocalPersistence, popupRedirectResolver: browserPopupRedirectResolver });
+const db = initializeFirestore(app, {});
 
-    // Your Firebase config
-    const firebaseConfig = {
-      apiKey: "AIzaSyBvUBx-QTjTyzv8oWxoCX4rweq72yChS3M",
-      authDomain: "grading-calculator-ce36f.firebaseapp.com",
-      projectId: "grading-calculator-ce36f",
-      messagingSenderId: "406763572625",
-      appId: "1:406763572625:web:026a965c194d9a3c8cde30",
-      measurementId: "G-GRKKZPC8VV"
-    };
+const $ = id=>document.getElementById(id);
+const show=(id,yes=true)=>$(id).classList.toggle("hidden",!yes);
+const setText=(id,t)=>$(id).textContent=t??"";
+const fmt=n=>isFinite(n)?n.toLocaleString(undefined,{style:'currency',currency:'USD'}):"—";
 
-    // Init
-    const app = initializeApp(firebaseConfig);
-    const auth = initializeAuth(app, { persistence: browserLocalPersistence, popupRedirectResolver: browserPopupRedirectResolver });
-    const db = initializeFirestore(app, {}); // switch to {experimentalForceLongPolling:true} if iOS needs it
+// === Auth ===
+const actionCodeSettings={url:window.location.href,handleCodeInApp:true};
+$("sendLink").onclick=async()=>{
+  const email=$("email").value.trim();
+  if(!email)return setText("sendStatus","Enter email");
+  await sendSignInLinkToEmail(auth,email,actionCodeSettings);
+  localStorage.setItem("emailForSignIn",email);
+  setText("sendStatus","Link sent!");
+};
+async function finishSignIn(email){
+  await signInWithEmailLink(auth,email,window.location.href);
+  localStorage.removeItem("emailForSignIn");
+  history.replaceState({},document.title,window.location.pathname);
+}
+if(isSignInWithEmailLink(auth,window.location.href)){
+  const email=localStorage.getItem("emailForSignIn");
+  if(email) finishSignIn(email); else show("needEmail",true);
+}
+$("finishWithEmail").onclick=()=>finishSignIn($("confirmEmail").value.trim());
+onAuthStateChanged(auth,user=>{
+  if(user){
+    show("step-send",false); show("step-complete",false);
+    show("authed",true); show("app",true);
+    setText("who",user.email);
+    const q=query(collection(db,`users/${user.uid}/cards`),orderBy("createdAt","desc"));
+    onSnapshot(q,snap=>renderCards(snap));
+  } else {
+    show("app",false); show("authed",false); show("step-send",true);
+  }
+});
+$("signOut").onclick=()=>signOut(auth);
 
-    // UI helpers
-    const $ = (id)=>document.getElementById(id);
-    const show = (id, yes=true)=>$(id).classList.toggle("hidden", !yes);
-    const setText = (id, t)=>$(id).textContent = t ?? "";
-    const fmt = (n)=>isFinite(n) ? n.toLocaleString(undefined,{style:'currency',currency:'USD'}) : "—";
-    const badge = (ok)=> {
-      const el = $("decision");
-      el.className = "badge " + (ok ? "ok" : "bad");
-      el.textContent = ok ? "GRADE" : "PASS";
-    };
+// === Calculator ===
+function readInputs(){
+  return{
+    cardName:$("#cardName").value.trim(),
+    rawCost:parseFloat($("#rawCost").value)||0,
+    gradeFee:parseFloat($("#gradeFee").value)||0,
+    price10:parseFloat($("#price10").value)||0,
+    price9:parseFloat($("#price9").value)||0,
+    gemRate:(parseFloat($("#gemRate").value)||0)/100,
+    feePct:(parseFloat($("#feePct").value)||0)/100,
+    otherCost:parseFloat($("#otherCost").value)||0,
+  };
+}
+function compute(v){
+  const netCost=v.rawCost+v.gradeFee+v.otherCost;
+  const net10=v.price10*(1-v.feePct)-netCost;
+  const net9=v.price9*(1-v.feePct)-netCost;
+  const ev=v.gemRate*net10+(1-v.gemRate)*net9;
+  return{ev,profit10:net10,profit9:net9,netCost,totalEV:ev};
+}
+$("calcBtn").onclick=()=>{
+  const v=readInputs(),c=compute(v);
+  setText("evOut",fmt(c.ev)); setText("p10Out",fmt(c.profit10));
+  setText("p9Out",fmt(c.profit9)); setText("netCostOut",fmt(c.netCost));
+  setText("totalEvOut",fmt(c.totalEV));
+  window.__last={v,c}; $("saveBtn").disabled=false;
+};
+$("saveBtn").onclick=async()=>{
+  const u=auth.currentUser;if(!u||!window.__last)return;
+  const {v,c}=window.__last;
+  await addDoc(collection(db,`users/${u.uid}/cards`),{
+    cardName:v.cardName, rawCost:v.rawCost, gradeFee:v.gradeFee, price10:v.price10,
+    price9:v.price9, gemRate:v.gemRate, feePct:v.feePct, otherCost:v.otherCost,
+    ev:c.ev, profit10:c.profit10, profit9:c.profit9, netCost:c.netCost, createdAt:serverTimestamp()
+  });
+  setText("saveStatus","Saved!"); setTimeout(()=>setText("saveStatus",""),1500);
+};
 
-    // Email link settings
-    const actionCodeSettings = {
-      url: `${window.location.origin}${window.location.pathname}`,
-      handleCodeInApp: true,
-    };
-
-    // Send magic link
-    $("sendLink").addEventListener("click", async ()=>{
-      const email = $("email").value.trim();
-      setText("sendStatus","");
-      if(!email){ setText("sendStatus","Enter a valid email."); return; }
-      try{
-        await setPersistence(auth, browserLocalPersistence);
-        await sendSignInLinkToEmail(auth, email, actionCodeSettings);
-        localStorage.setItem("emailForSignIn", email);
-        setText("sendStatus","Link sent! Check your email.");
-      }catch(err){
-        console.error(err); setText("sendStatus", err.message || "Could not send link.");
-      }
-    });
-
-    // Complete sign-in
-    async function tryCompleteSignIn(){
-      try{
-        if(!isSignInWithEmailLink(auth, window.location.href)) return;
-        show("step-send", false); show("step-complete", true);
-        let email = localStorage.getItem("emailForSignIn");
-        if(!email){ show("needEmail", true); return; }
-        await finishSignIn(email);
-      }catch(err){
-        console.error(err); setText("finishStatus", err.message || "Sign-in failed.");
-      }
-    }
-    async function finishSignIn(email){
-      setText("finishStatus","Signing you in…");
-      try{
-        await setPersistence(auth, browserLocalPersistence);
-        await signInWithEmailLink(auth, email, window.location.href);
-        localStorage.removeItem("emailForSignIn");
-        setText("finishStatus","");
-        history.replaceState({}, document.title, window.location.pathname);
-      }catch(err){
-        console.error(err); setText("finishStatus", err.message || "Could not complete sign-in.");
-      }
-    }
-    $("finishWithEmail").addEventListener("click", async ()=>{
-      const email = $("confirmEmail").value.trim();
-      if(!email){ setText("finishStatus","Enter your email."); return; }
-      await finishSignIn(email);
-    });
-
-    // Auth state
-    let unsubscribeCards = null;
-    onAuthStateChanged(auth, (user)=>{
-      if(user){
-        show("step-send", false); show("step-complete", false);
-        show("authed", true); show("app", true);
-        setText("who", user.email || user.uid);
-        setText("projInfo", firebaseConfig.projectId);
-        if(unsubscribeCards) unsubscribeCards();
-        const q = query(collection(db, `users/${user.uid}/cards`), orderBy("createdAt","desc"));
-        unsubscribeCards = onSnapshot(q, (snap)=>renderCards(snap));
-      }else{
-        show("authed", false); show("app", false); show("step-send", true);
-        if(unsubscribeCards){ unsubscribeCards(); unsubscribeCards=null; }
-        $("cardsTbody").innerHTML="";
-      }
-    });
-    $("signOut").addEventListener("click", async ()=>{
-      setText("sendStatus","");
-      try{ await signOut(auth); }catch(err){ console.error(err); }
-    });
-    tryCompleteSignIn();
-
-    // ===== Calculator (classic) =====
-    function readInputs(){
-      const num = id => parseFloat($(id).value);
-      return {
-        cardName: $("#cardName").value.trim(),
-        rawCost: num("rawCost") || 0,
-        gradeFee: num("gradeFee") || 0,
-        otherCost: num("otherCost") || 0,
-        price10: num("price10") || 0,
-        price9:  num("price9")  || 0,
-        feePct:  (num("feePct") || 0) / 100,
-        qty: Math.max(1, Math.floor(num("qty") || 1)),
-        gemRate: (num("gemRate") || 0) / 100,
-        gemThresh: (num("gemThresh") || 0) / 100,
-        minEV: num("minEV") || 0
-      };
-    }
-
-    function compute(v){
-      const netFee10 = v.price10 * (1 - v.feePct);
-      const netFee9  = v.price9  * (1 - v.feePct);
-      const netCost  = v.rawCost + v.gradeFee + v.otherCost;
-
-      const profit10 = netFee10 - netCost;
-      const profit9  = netFee9  - netCost;
-
-      const ev = v.gemRate * profit10 + (1 - v.gemRate) * profit9;
-      const totalEV = ev * v.qty;
-
-      // Breakeven PSA10 price (EV=0 while keeping PSA9 outcome)
-      let breakeven10 = null;
-      if(v.gemRate > 0){
-        const numerator = netCost - (1 - v.gemRate) * (v.price9 * (1 - v.feePct) - netCost);
-        breakeven10 = numerator / (v.gemRate * (1 - v.feePct));
-      }
-
-      const shouldGrade = (v.gemRate >= v.gemThresh) && (ev >= v.minEV);
-      return { ev, totalEV, profit10, profit9, netCost, breakeven10, shouldGrade };
-    }
-
-    function updateOutputs(c){
-      setText("evOut", fmt(c.ev));
-      setText("p10Out", fmt(c.profit10));
-      setText("p9Out", fmt(c.profit9));
-      setText("netCostOut", fmt(c.netCost));
-      setText("breakeven10Out", c.breakeven10 ? fmt(c.breakeven10) : "—");
-      setText("totalEvOut", fmt(c.totalEV));
-      badge(c.shouldGrade);
-    }
-
-    $("calcBtn").addEventListener("click", ()=>{
-      const v = readInputs();
-      const c = compute(v);
-      updateOutputs(c);
-      window.__lastVals = v; window.__lastCalc = c;
-      setText("calcStatus","Calculated."); setTimeout(()=>setText("calcStatus",""),1200);
-      $("#saveBtn").disabled = false;
-    });
-    $("resetBtn").addEventListener("click", ()=>{
-      ["rawCost","gradeFee","otherCost","price10","price9","feePct","qty","gemRate","gemThresh","minEV"].forEach(id=>{
-        if(id==="feePct") $(id).value = 12.5; else if(id==="qty") $(id).value = 1;
-      });
-      setText("evOut","$0.00"); setText("p10Out","$0.00"); setText("p9Out","$0.00");
-      setText("netCostOut","$0.00"); setText("breakeven10Out","$0.00"); setText("totalEvOut","$0.00");
-      badge(false); $("#saveBtn").disabled = true;
-    });
-
-    // Save to Firestore
-    $("saveBtn").addEventListener("click", async ()=>{
-      const user = auth.currentUser; if(!user) return;
-      if(!window.__lastVals || !window.__lastCalc){ setText("saveStatus","Calculate first."); return; }
-      const v = window.__lastVals, c = window.__lastCalc;
-      try{
-        setText("saveStatus","Saving…");
-        await addDoc(collection(db, `users/${user.uid}/cards`), {
-          cardName: v.cardName || "(untitled)",
-          rawCost: v.rawCost, gradeFee: v.gradeFee, otherCost: v.otherCost,
-          price10: v.price10, price9: v.price9,
-          feePct: v.feePct, qty: v.qty, gemRate: v.gemRate, gemThresh: v.gemThresh, minEV: v.minEV,
-          ev: c.ev, totalEV: c.totalEV, profit10: c.profit10, profit9: c.profit9, netCost: c.netCost, breakeven10: c.breakeven10 ?? null,
-          shouldGrade: c.shouldGrade,
-          createdAt: serverTimestamp()
-        });
-        setText("saveStatus","Saved."); setTimeout(()=>setText("saveStatus",""),1200);
-      }catch(err){ console.error(err); setText("saveStatus", err.message || "Save failed."); }
-    });
-
-    // Render saved
-    function renderCards(snap){
-      const tbody = $("cardsTbody"); tbody.innerHTML = "";
-      snap.forEach(docSnap=>{
-        const d = docSnap.data();
-        const when = d.createdAt?.toDate ? d.createdAt.toDate() : null;
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${when ? when.toLocaleString() : ""}</td>
-          <td>${escapeHtml(d.cardName||"")}</td>
-          <td class="right">${fmt(d.ev)}</td>
-          <td class="right">${fmt(d.profit10)}</td>
-          <td class="right">${fmt(d.profit9)}</td>
-          <td class="right">${fmt(d.netCost)}</td>
-          <td class="right">${Math.round((d.gemRate||0)*100)}%</td>
-          <td class="right">${d.qty ?? 1}</td>
-          <td class="right">${fmt(d.totalEV)}</td>
-          <td class="right"><button class="btn ghost" data-id="${docSnap.id}">Delete</button></td>
-        `;
-        tbody.appendChild(tr);
-      });
-      tbody.querySelectorAll("button[data-id]").forEach(btn=>{
-        btn.addEventListener("click", async ()=>{
-          const user = auth.currentUser; if(!user) return;
-          try{ await deleteDoc(doc(db, `users/${user.uid}/cards/${btn.dataset.id}`)); }
-          catch(err){ console.error(err); alert(err.message || "Delete failed."); }
-        });
-      });
-    }
-    function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;' }[m])); }
-  </script>
+// === Render saved list ===
+function renderCards(snap){
+  const tbody=$("cardsTbody"); tbody.innerHTML="";
+  snap.forEach(docSnap=>{
+    const d=docSnap.data();
+    const tr=document.createElement("tr");
+    const when=d.createdAt?.toDate?d.createdAt.toDate().toLocaleString():"";
+    tr.innerHTML=`
+      <td>${when}</td><td>${d.cardName||""}</td>
+      <td class="right">${fmt(d.ev)}</td>
+      <td class="right">${fmt(d.profit10)}</td>
+      <td class="right">${fmt(d.profit9)}</td>
+      <td class="right">${fmt(d.netCost)}</td>
+      <td><button class="ghost" data-id="${docSnap.id}">Del</button></td>`;
+    tbody.appendChild(tr);
+  });
+  tbody.querySelectorAll("button[data-id]").forEach(btn=>{
+    btn.onclick=()=>deleteDoc(doc(db,`users/${auth.currentUser.uid}/cards/${btn.dataset.id}`));
+  });
+}
+</script>
 </body>
 </html>
