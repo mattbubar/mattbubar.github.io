@@ -1,501 +1,187 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>Card Grading Calculator</title>
-
-  <meta name="theme-color" content="#0f172a">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Magic Link Sign-In</title>
   <style>
-    :root{
-      --bg:#0f172a; --card:#0b1220; --muted:#94a3b8; --text:#e5e7eb;
-      --blue:#2563eb; --green:#16a34a; --red:#dc2626; --border:rgba(255,255,255,.08)
-    }
-    *{box-sizing:border-box}
-    html{font-size:16px}
-    body{
-      margin:0; background:var(--bg); color:var(--text);
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .wrap{max-width:980px;margin:0 auto;padding:16px}
-    .hero{ text-align:center; margin:8px 0 16px; }
-    .hero img{ max-width:200px; height:auto; display:block; margin:0 auto 8px; }
-    .card{
-      background:var(--card); border:1px solid var(--border);
-      border-radius:14px; padding:16px; margin-bottom:16px
-    }
-    .authbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:center}
-    .muted{color:var(--muted)}
-    .hidden{display:none !important}
-
-    label{display:block;font-size:.8rem;color:var(--muted);margin:6px 0 4px}
-    input{
-      width:100%; padding:12px 14px; border-radius:12px; border:1px solid var(--border);
-      background:#0a0f1e; color:var(--text); font-size:1rem; touch-action:manipulation;
-    }
-    input[type="number"]{appearance:textfield}
-    input::-webkit-outer-spin-button, input::-webkit-inner-spin-button{appearance:none;margin:0}
-
-    button{
-      width:100%; padding:14px; border:0; border-radius:12px; cursor:pointer;
-      background:var(--blue); color:#fff; font-weight:700; font-size:1rem;
-    }
-    .btns{display:grid;grid-template-columns:1fr;gap:10px;margin-top:10px}
-    .btn-secondary{background:#334155}
-    .btn-danger{background:#dc2626}
-
-    .grid{display:grid;gap:10px;grid-template-columns:1fr}
-    @media (min-width:760px){ .grid{grid-template-columns:repeat(3,1fr)} .btns{grid-template-columns:repeat(3,1fr)} }
-
-    .stat{
-      display:flex;justify-content:space-between;gap:10px;
-      padding:12px;border:1px solid var(--border);border-radius:12px;background:#0a0f1e;margin-top:8px;
-      font-size:1rem
-    }
-    .pill{padding:2px 10px;border-radius:999px;font-size:.78rem;font-weight:800}
-    .good{background:rgba(22,163,74,.15);color:#86efac;border:1px solid rgba(22,163,74,.3)}
-    .bad{background:rgba(220,38,38,.15);color:#fecaca;border:1px solid rgba(220,38,38,.3)}
-    .small{font-size:.85rem;color:var(--muted)}
-
-    .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
-    table{width:100%;border-collapse:collapse;min-width:680px}
-    th,td{padding:12px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left;font-size:.95rem;white-space:nowrap;vertical-align:middle}
-    th{color:var(--muted);font-weight:700}
-    .actions{display:flex;gap:8px}
-
-    /* debug bar (optional) */
-    #debug{white-space:pre-wrap;font:12px/1.45 ui-monospace,Menlo,monospace;background:#111827;color:#e5e7eb;border:1px solid #334155;border-radius:10px;padding:10px;margin:16px 0}
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; max-width: 520px; margin: 24px auto; padding: 0 16px; }
+    .card { border: 1px solid #e5e7eb; border-radius: 14px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+    button { padding: 10px 14px; border: 0; border-radius: 10px; cursor: pointer; }
+    button.primary { background: black; color: white; }
+    input[type="email"] { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 10px; margin: 8px 0 12px; }
+    .muted { color: #6b7280; font-size: 12px; }
+    .row { display: flex; gap: 8px; align-items: center; }
+    .hidden { display: none; }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="hero">
-      <img src="logo.png" alt="Card Grading Calculator">
-      <h1 style="margin:0;font-size:1.35rem;">Card Grading Calculator</h1>
+  <h1>Sign in to Grading Calculator</h1>
+
+  <div class="card" id="step-send">
+    <label for="email">Email</label>
+    <input id="email" type="email" placeholder="you@example.com" autocomplete="email" />
+    <div class="row">
+      <button class="primary" id="sendLink">Send magic link</button>
+      <span class="muted" id="sendStatus"></span>
     </div>
-
-    <div class="card authbar">
-      <div id="userInfo" class="muted">Not signed in</div>
-      <button id="signInBtn" style="max-width:260px">Sign in with Google</button>
-      <button id="signOutBtn" class="btn-secondary hidden" style="max-width:160px">Sign out</button>
-    </div>
-
-    <div class="card">
-      <h3 style="margin:0 0 8px">Profit & EV Calculator</h3>
-      <div class="grid">
-        <div><label>Card Name</label><input id="cardName" placeholder="e.g., 1991 SkyBox #546 MJ"></div>
-        <div><label>Raw Price ($)</label><input id="rawPrice" type="number" inputmode="decimal" step="0.01" value="20"></div>
-        <div><label>Grading Fee ($)</label><input id="gradingFee" type="number" inputmode="decimal" step="0.01" value="21"></div>
-        <div><label>PSA 9 Price ($)</label><input id="psa9Price" type="number" inputmode="decimal" step="0.01" value="25"></div>
-        <div><label>PSA 10 Price ($)</label><input id="psa10Price" type="number" inputmode="decimal" step="0.01" value="100"></div>
-        <div><label>eBay Fee (%)</label><input id="ebayFee" type="number" inputmode="decimal" step="0.1" value="12.5"></div>
-        <div><label>Gem Rate (%)</label><input id="gemRate" type="number" inputmode="decimal" step="1" value="60"></div>
-      </div>
-
-      <div class="btns">
-        <button id="calcBtn">Calculate</button>
-        <button id="saveBtn" class="hidden">Save Card</button>
-        <button id="updateBtn" class="btn-secondary hidden">Update Card</button>
-        <button id="cancelEditBtn" class="btn-secondary hidden">Cancel Edit</button>
-      </div>
-
-      <div id="results" style="margin-top:8px;display:none">
-        <div class="stat"><span>Total Cost (Raw + Grading)</span><b id="r_cost"></b></div>
-        <div class="stat"><span>PSA 9 Net (after fees)</span><span><b id="r_net9"></b> <span id="r_pill9" class="pill"></span></span></div>
-        <div class="stat"><span>PSA 10 Net (after fees)</span><span><b id="r_net10"></b> <span id="r_pill10" class="pill"></span></span></div>
-        <div class="stat"><span>PSA 9 Profit/Loss</span><span id="r_p9"></span></div>
-        <div class="stat"><span>PSA 10 Profit/Loss</span><span id="r_p10"></span></div>
-        <div class="stat"><span>Expected Profit (Gem% × P10 + (1−Gem%) × P9)</span><span id="r_ev"></span></div>
-        <div class="stat"><span>Decision</span><b id="r_decision" class="pill"></b></div>
-        <div class="small">Decision rule: <b>YES</b> if Gem Rate ≥ 60% and EV ≥ $0.</div>
-      </div>
-      <div class="small">Sign in to save, edit, and delete your cards (private to your account).</div>
-    </div>
-
-    <div class="card">
-      <h3 style="margin:4px 0 8px">Saved Cards (Live)</h3>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Card</th><th>Raw</th><th>9</th><th>10</th><th>Gem%</th><th>EV</th><th>Decision</th><th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="cardsTbody"><tr><td colspan="8" class="small">Sign in to see your saved cards.</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Debug panel (optional, helps on mobile) -->
-    <div id="debug"><b>Debug</b></div>
+    <p class="muted">We’ll email you a one-tap sign-in link. No password needed.</p>
   </div>
 
+  <div class="card hidden" id="step-complete">
+    <p>Finishing sign-in…</p>
+    <div id="needEmail" class="hidden">
+      <p class="muted">For security, confirm your email to complete sign-in:</p>
+      <input id="confirmEmail" type="email" placeholder="you@example.com" autocomplete="email" />
+      <div class="row">
+        <button class="primary" id="finishWithEmail">Finish sign-in</button>
+        <span class="muted" id="finishStatus"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card hidden" id="authed">
+    <p>Signed in as <strong id="who"></strong></p>
+    <div class="row">
+      <button id="signOut">Sign out</button>
+      <span class="muted" id="authStatus"></span>
+    </div>
+  </div>
+
+  <div id="debug" class="muted" style="margin-top:12px;"></div>
+
   <script type="module">
+    // --- Firebase v11 (CDN) ---
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
     import {
-      // use initializeFirestore instead of getFirestore
-      initializeFirestore, collection, addDoc, serverTimestamp, onSnapshot,
-      query, orderBy, doc, deleteDoc, updateDoc, getDocs
-    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-    import {
-      getAuth, onAuthStateChanged, signInWithPopup, signInWithRedirect,
-      GoogleAuthProvider, signOut, getRedirectResult,
-      setPersistence, browserLocalPersistence, browserSessionPersistence, inMemoryPersistence
+      initializeAuth,
+      onAuthStateChanged,
+      signOut,
+      setPersistence,
+      browserLocalPersistence,
+      browserPopupRedirectResolver,
+      isSignInWithEmailLink,
+      sendSignInLinkToEmail,
+      signInWithEmailLink
     } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
-    // --- Debug helper ---
-    const dbg = (msg, data) => {
-      const el = document.getElementById('debug');
-      if (!el) return;
-      const line = `[${new Date().toLocaleTimeString()}] ${msg} ${data ? JSON.stringify(data) : ""}`;
-      el.textContent += (el.textContent ? "\n" : "") + line;
-      console.log(line);
+    // --- Your Firebase config (replace with yours) ---
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      appId: "YOUR_APP_ID",
     };
 
-    (async () => {
-      // Firebase config
-      const firebaseConfig = {
-        apiKey: "AIzaSyBvUBx-QTjTyzv8oWxoCX4rweq72yChS3M",
-        authDomain: "grading-calculator-ce36f.firebaseapp.com",
-        projectId: "grading-calculator-ce36f",
-        storageBucket: "grading-calculator-ce36f.firebasestorage.app",
-        messagingSenderId: "406763572625",
-        appId: "1:406763572625:web:026a965c194d9a3c8cde30",
-        measurementId: "G-GRKKZPC8VV"
-      };
+    // --- Init ---
+    const app = initializeApp(firebaseConfig);
+    const auth = initializeAuth(app, {
+      persistence: browserLocalPersistence,
+      popupRedirectResolver: browserPopupRedirectResolver
+    });
 
-      // Init
-      const app = initializeApp(firebaseConfig);
+    // --- UI helpers ---
+    const $ = (id) => document.getElementById(id);
+    const show = (id, yes = true) => $(id).classList.toggle("hidden", !yes);
+    const setText = (id, text) => $(id).textContent = text ?? "";
 
-      // Force Firestore long-polling (iOS Safari/content blockers workaround)
-      const db = initializeFirestore(app, {
-        experimentalForceLongPolling: true,
-        useFetchStreams: false,
-      });
+    // --- ActionCodeSettings for Email Link ---
+    // Use your production URL. Keep same-origin so the link opens back in your app.
+    const actionCodeSettings = {
+      url: `${window.location.origin}${window.location.pathname}`, // return here
+      handleCodeInApp: true,
+      // If you have a custom Auth domain (recommended), it will be used automatically.
+      // dynamicLinkDomain: "yourcustom.page.link" // optional if you’ve set one in Firebase Auth
+    };
 
-      const auth = getAuth(app);
-      auth.useDeviceLanguage?.();
+    // --- Send magic link ---
+    $("sendLink").addEventListener("click", async () => {
+      const email = $("email").value.trim();
+      setText("sendStatus", "");
+      if (!email) { setText("sendStatus", "Enter a valid email."); return; }
 
-      // Environment flags
-      const ua = navigator.userAgent || navigator.vendor || "";
-      const isIOS = /iPhone|iPad|iPod/.test(ua);
-      const isAndroid = /Android/i.test(ua);
-      const isMobile = isIOS || isAndroid;
-      const isInAppBrowser =
-        ua.includes("FBAN") || ua.includes("FBAV") || ua.includes("Instagram") ||
-        ua.includes("Twitter") || ua.toLowerCase().includes("tiktok") || ua.includes("GSA");
-
-      // Show open-in-browser hint if in-app
-      if (isInAppBrowser) {
-        const bar = document.createElement("div");
-        bar.style.cssText = "position:sticky;top:0;z-index:9999;background:#581c87;color:#fff;padding:10px;border-radius:10px;margin:10px 0;text-align:center;font-weight:700";
-        bar.innerHTML = `This app works best in Safari/Chrome. <button id="openExternal" style="margin-left:8px;padding:8px 12px;border:0;border-radius:8px;background:#10b981;color:#fff;font-weight:800">Open in browser</button>`;
-        document.querySelector(".wrap").prepend(bar);
-        document.getElementById("openExternal").onclick = () => {
-          window.open(location.href, "_blank", "noopener,noreferrer");
-        };
-        dbg("inAppBrowser", true);
-      }
-
-      // Log origin/authDomain
-      dbg("origin", location.origin);
-      dbg("authDomain", auth.config?.authDomain || "(none)");
-
-      // Persistence with fallbacks (NO top-level await)
       try {
         await setPersistence(auth, browserLocalPersistence);
-        dbg("persistence", "local");
-      } catch {
-        try {
-          await setPersistence(auth, browserSessionPersistence);
-          dbg("persistence", "session");
-        } catch {
-          await setPersistence(auth, inMemoryPersistence);
-          dbg("persistence", "inMemory");
-        }
+        await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+        // Save email locally so we can auto-complete on same device
+        window.localStorage.setItem("emailForSignIn", email);
+        setText("sendStatus", "Link sent! Check your email.");
+      } catch (err) {
+        console.error(err);
+        setText("sendStatus", err.message || "Could not send link.");
       }
+    });
 
-      // Storage/cookie diagnostics
-      try { localStorage.setItem('_t','1'); localStorage.removeItem('_t'); dbg('localStorage','ok'); } catch(e){ dbg('localStorage','blocked'); }
-      try { sessionStorage.setItem('_t','1'); sessionStorage.removeItem('_t'); dbg('sessionStorage','ok'); } catch(e){ dbg('sessionStorage','blocked'); }
-      document.cookie = "t=1; path=/; SameSite=Lax; Secure";
-      dbg('cookie', document.cookie.includes('t=1') ? 'ok' : 'blocked');
-
-      // UI helpers
-      const $ = id => document.getElementById(id);
-      const money = v => "$" + (Number(v)||0).toFixed(2);
-      const pill = (el, ok) => { el.className = "pill " + (ok ? "good" : "bad"); el.textContent = ok ? "PROFIT" : "LOSS"; };
-
-      // Calculator
-      function calc() {
-        const raw = parseFloat($("rawPrice").value)||0;
-        const grade = parseFloat($("gradingFee").value)||0;
-        const p9 = parseFloat($("psa9Price").value)||0;
-        const p10 = parseFloat($("psa10Price").value)||0;
-        const fee = (parseFloat($("ebayFee").value)||0)/100;
-        const gem = (parseFloat($("gemRate").value)||0)/100;
-
-        const cost = raw + grade;
-        const net9 = p9 * (1 - fee);
-        const net10 = p10 * (1 - fee);
-        const profit9 = net9 - cost;
-        const profit10 = net10 - cost;
-        const ev = gem * profit10 + (1 - gem) * profit9;
-        const pass = gem >= 0.60 && ev >= 0;
-
-        $("results").style.display = "block";
-        $("r_cost").textContent = money(cost);
-        $("r_net9").textContent = money(net9);
-        $("r_net10").textContent = money(net10);
-        pill($("r_pill9"), profit9 >= 0);
-        pill($("r_pill10"), profit10 >= 0);
-        $("r_p9").innerHTML = (profit9>=0?'<span class="pill good">+</span> ':'<span class="pill bad">−</span> ')+ money(Math.abs(profit9));
-        $("r_p10").innerHTML = (profit10>=0?'<span class="pill good">+</span> ':'<span class="pill bad">−</span> ')+ money(Math.abs(profit10));
-        $("r_ev").innerHTML = (ev>=0?'<span class="pill good">+</span> ':'<span class="pill bad">−</span> ')+ money(Math.abs(ev));
-        $("r_decision").className = "pill " + (pass ? "good" : "bad");
-        $("r_decision").textContent = pass ? "YES (Grade)" : "NO (Skip)";
-        return { raw, grade, p9, p10, feePct: fee, gemPct: gem, cost, net9, net10, profit9, profit10, ev, pass };
-      }
-      $("calcBtn").addEventListener("click", calc);
-
-      // Firestore save/update/delete
-      let unsubscribe = null, currentUid = null, editingId = null;
-      const cache = new Map();
-
-      async function saveNew() {
-        if (!currentUid) { alert("Please sign in first."); return; }
-        const name = $("cardName").value.trim();
-        if (!name) { alert("Please enter a Card Name."); return; }
-        const r = calc();
-        await addDoc(collection(db, `users/${currentUid}/cards`), {
-          name,
-          raw: r.raw, gradingFee: r.grade, psa9: r.p9, psa10: r.p10,
-          ebayFeePct: r.feePct, gemRatePct: r.gemPct,
-          cost: r.cost, net9: r.net9, net10: r.net10,
-          profit9: r.profit9, profit10: r.profit10, ev: r.ev,
-          decision: r.pass ? "YES" : "NO",
-          createdAt: serverTimestamp()
-        })
-        .then(() => alert("Saved ✅"))
-        .catch(e => {
-          dbg("firestore add error", { code: e?.code, message: e?.message });
-          alert("Save error: " + (e.message || e.code || e));
-        });
-        editingId = null;
-        $("saveBtn").classList.remove("hidden");
-        $("updateBtn").classList.add("hidden");
-        $("cancelEditBtn").classList.add("hidden");
-      }
-      $("saveBtn").addEventListener("click", saveNew);
-
-      async function updateExisting() {
-        if (!editingId || !currentUid) return;
-        const name = $("cardName").value.trim();
-        const r = calc();
-        await updateDoc(doc(db, `users/${currentUid}/cards`, editingId), {
-          name,
-          raw: r.raw, gradingFee: r.grade, psa9: r.p9, psa10: r.p10,
-          ebayFeePct: r.feePct, gemRatePct: r.gemPct,
-          cost: r.cost, net9: r.net9, net10: r.net10,
-          profit9: r.profit9, profit10: r.profit10, ev: r.ev,
-          decision: r.pass ? "YES" : "NO",
-        })
-        .then(() => alert("Updated ✅"))
-        .catch(e => {
-          dbg("firestore update error", { code: e?.code, message: e?.message });
-          alert("Update error: " + (e.message || e.code || e));
-        });
-        editingId = null;
-        $("saveBtn").classList.remove("hidden");
-        $("updateBtn").classList.add("hidden");
-        $("cancelEditBtn").classList.add("hidden");
-      }
-      $("updateBtn").addEventListener("click", updateExisting);
-      $("cancelEditBtn").addEventListener("click", () => {
-        editingId = null;
-        $("saveBtn").classList.remove("hidden");
-        $("updateBtn").classList.add("hidden");
-        $("cancelEditBtn").classList.add("hidden");
-      });
-
-      function enterEdit(id, data) {
-        editingId = id;
-        $("cardName").value = data.name || "";
-        $("rawPrice").value = data.raw ?? "";
-        $("gradingFee").value = data.gradingFee ?? "";
-        $("psa9Price").value = data.psa9 ?? "";
-        $("psa10Price").value = data.psa10 ?? "";
-        $("ebayFee").value = data.ebayFeePct ? (data.ebayFeePct*100).toFixed(2) : "12.5";
-        $("gemRate").value = data.gemRatePct ? (data.gemRatePct*100).toFixed(0) : "60";
-        calc();
-        $("saveBtn").classList.add("hidden");
-        $("updateBtn").classList.remove("hidden");
-        $("cancelEditBtn").classList.remove("hidden");
-      }
-
-      // Realtime with fallback to polling if blocked
-      let pollingTimer = null;
-      function startUserListener(uid) {
-        const q = query(collection(db, `users/${uid}/cards`), orderBy("createdAt","desc"));
-
-        // Clear any old polling
-        if (pollingTimer) { clearInterval(pollingTimer); pollingTimer = null; }
-
-        try {
-          unsubscribe = onSnapshot(
-            q,
-            (snap) => {
-              const tbody = $("cardsTbody");
-              tbody.innerHTML = "";
-              cache.clear();
-              snap.forEach(docSnap => {
-                const c = docSnap.data(); cache.set(docSnap.id, c);
-                const tr = document.createElement("tr");
-                tr.innerHTML = `
-                  <td>${c.name || ""}</td>
-                  <td>${money(c.raw)}</td>
-                  <td>${money(c.psa9)}</td>
-                  <td>${money(c.psa10)}</td>
-                  <td>${Math.round((c.gemRatePct||0)*100)}%</td>
-                  <td>${money(c.ev || 0)}</td>
-                  <td><span class="pill ${c.decision==='YES'?'good':'bad'}">${c.decision||'NO'}</span></td>
-                  <td class="actions">
-                    <button class="btn-secondary" data-action="edit" data-id="${docSnap.id}">Edit</button>
-                    <button class="btn-danger" data-action="delete" data-id="${docSnap.id}">Delete</button>
-                  </td>
-                `;
-                tbody.appendChild(tr);
-              });
-              if (!snap.size) {
-                $("cardsTbody").innerHTML = `<tr><td colspan="8" class="small">No cards saved yet.</td></tr>`;
-              }
-            },
-            (e) => {
-              // Realtime blocked -> fallback to polling
-              dbg("snapshot error -> switching to polling", { code: e?.code, message: e?.message });
-              if (unsubscribe) { try { unsubscribe(); } catch {} unsubscribe = null; }
-              const runPoll = async () => {
-                try {
-                  const snap = await getDocs(q);
-                  const tbody = $("cardsTbody");
-                  tbody.innerHTML = "";
-                  cache.clear();
-                  snap.forEach(docSnap => {
-                    const c = docSnap.data(); cache.set(docSnap.id, c);
-                    const tr = document.createElement("tr");
-                    tr.innerHTML = `
-                      <td>${c.name || ""}</td>
-                      <td>${money(c.raw)}</td>
-                      <td>${money(c.psa9)}</td>
-                      <td>${money(c.psa10)}</td>
-                      <td>${Math.round((c.gemRatePct||0)*100)}%</td>
-                      <td>${money(c.ev || 0)}</td>
-                      <td><span class="pill ${c.decision==='YES'?'good':'bad'}">${c.decision||'NO'}</span></td>
-                      <td class="actions">
-                        <button class="btn-secondary" data-action="edit" data-id="${docSnap.id}">Edit</button>
-                        <button class="btn-danger" data-action="delete" data-id="${docSnap.id}">Delete</button>
-                      </td>
-                    `;
-                    tbody.appendChild(tr);
-                  });
-                  if (!snap.size) {
-                    $("cardsTbody").innerHTML = `<tr><td colspan="8" class="small">No cards saved yet.</td></tr>`;
-                  }
-                } catch (err) {
-                  dbg("polling error", { code: err?.code, message: err?.message });
-                }
-              };
-              runPoll();
-              pollingTimer = setInterval(runPoll, 10000); // poll every 10s
-            }
-          );
-        } catch (err) {
-          dbg("onSnapshot setup error", { message: err?.message });
-        }
-      }
-
-      $("cardsTbody").addEventListener("click", async (e) => {
-        const btn = e.target.closest("button"); if (!btn) return;
-        const id = btn.getAttribute("data-id");
-        const action = btn.getAttribute("data-action");
-        if (action === "delete") {
-          if (confirm("Delete this card?")) await deleteDoc(doc(db, `users/${currentUid}/cards`, id));
-        } else if (action === "edit") {
-          const data = cache.get(id); if (data) enterEdit(id, data);
-        }
-      });
-
-      // Auth: smart sign-in (redirect on mobile; popup on desktop w/ fallback)
-      const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: "select_account" });
-
-      async function signInSmart() {
-        try {
-          if (isMobile) {
-            dbg("sign-in", { mode: "redirect", inApp: isInAppBrowser });
-            await signInWithRedirect(auth, provider);
-            return;
-          }
-          dbg("sign-in", { mode: "popup" });
-          await signInWithPopup(auth, provider);
-        } catch (e) {
-          if (e?.code === 'auth/popup-closed-by-user' ||
-              e?.code === 'auth/popup-blocked' ||
-              e?.code === 'auth/cancelled-popup-request') {
-            dbg("popup failed -> redirect", { code: e.code });
-            await signInWithRedirect(auth, provider);
-          } else {
-            dbg("sign-in error", { code: e?.code, message: e?.message });
-            alert(e.message || e.code || e);
-          }
-        }
-      }
-
-      document.getElementById("signInBtn").onclick = signInSmart;
-      document.getElementById("signOutBtn").onclick = () => signOut(auth);
-
-      // Handle redirect result (no top-level await)
+    // --- Complete sign-in if this page is opened via the link ---
+    async function tryCompleteSignIn() {
       try {
-        const res = await getRedirectResult(auth);
-        if (res?.user) dbg("redirect result user", { uid: res.user.uid, email: res.user.email });
-      } catch (e) {
-        dbg("redirect error", { code: e?.code, message: e?.message });
-      }
+        if (!isSignInWithEmailLink(auth, window.location.href)) return;
 
-      onAuthStateChanged(auth, (user) => {
-        dbg("auth state", { uid: user?.uid || null });
-        if (unsubscribe) { try { unsubscribe(); } catch {} unsubscribe = null; }
-        if (!user) {
-          currentUid = null;
-          document.getElementById("userInfo").textContent = "Not signed in";
-          document.getElementById("signInBtn").classList.remove("hidden");
-          document.getElementById("signOutBtn").classList.add("hidden");
-          document.getElementById("saveBtn").classList.add("hidden");
-          document.getElementById("updateBtn").classList.add("hidden");
-          document.getElementById("cancelEditBtn").classList.add("hidden");
-          document.getElementById("cardsTbody").innerHTML =
-            `<tr><td colspan="8" class="small">Sign in to see your saved cards.</td></tr>`;
-          // stop polling if active
-          if (pollingTimer) { clearInterval(pollingTimer); pollingTimer = null; }
+        show("step-send", false);
+        show("step-complete", true);
+
+        let email = window.localStorage.getItem("emailForSignIn");
+        if (!email) {
+          // Opened on a different device/browser: ask user to re-enter email.
+          show("needEmail", true);
           return;
         }
-        currentUid = user.uid;
-        document.getElementById("userInfo").textContent =
-          `Signed in as ${user.displayName || user.email || user.uid}`;
-        document.getElementById("signInBtn").classList.add("hidden");
-        document.getElementById("signOutBtn").classList.remove("hidden");
-        document.getElementById("saveBtn").classList.remove("hidden");
 
-        startUserListener(currentUid);
-      });
+        await finishSignIn(email);
+      } catch (err) {
+        console.error(err);
+        setText("finishStatus", err.message || "Sign-in failed.");
+      }
+    }
 
-      // Initial calc
-      window.addEventListener("DOMContentLoaded", calc);
-    })();
+    async function finishSignIn(email) {
+      setText("finishStatus", "Signing you in…");
+      try {
+        await setPersistence(auth, browserLocalPersistence);
+        await signInWithEmailLink(auth, email, window.location.href);
+        window.localStorage.removeItem("emailForSignIn");
+        setText("finishStatus", "");
+        // Clean the URL (remove oobCode/etc)
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } catch (err) {
+        console.error(err);
+        setText("finishStatus", err.message || "Could not complete sign-in.");
+      }
+    }
+
+    $("finishWithEmail").addEventListener("click", async () => {
+      const email = $("confirmEmail").value.trim();
+      if (!email) { setText("finishStatus", "Enter your email."); return; }
+      await finishSignIn(email);
+    });
+
+    // --- Auth state listener ---
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        show("step-send", false);
+        show("step-complete", false);
+        show("authed", true);
+        setText("who", user.email || user.uid);
+      } else {
+        show("authed", false);
+        show("step-send", true);
+      }
+    });
+
+    // --- Sign out ---
+    $("signOut").addEventListener("click", async () => {
+      setText("authStatus", "");
+      try {
+        await signOut(auth);
+        setText("authStatus", "Signed out.");
+      } catch (err) {
+        console.error(err);
+        setText("authStatus", err.message || "Error signing out.");
+      }
+    });
+
+    // Try to complete sign-in on load (when returning from email link)
+    tryCompleteSignIn();
   </script>
 </body>
 </html>
