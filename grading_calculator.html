@@ -2,32 +2,100 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>Card Grading Calculator + Firebase (Email Link + Edit/Delete)</title>
   <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:#0f172a;color:#e5e7eb;margin:0;padding:24px}
+    /* Base (mobile-first) */
+    :root{
+      --bg:#0f172a;
+      --card:#0b1220;
+      --card2:#0a0f1e;
+      --border:rgba(255,255,255,.08);
+      --muted:#94a3b8;
+      --text:#e5e7eb;
+      --blue:#2563eb;
+      --btn:#2563eb;
+      --btn2:#334155;
+      --danger:#dc2626;
+      --good-bg:rgba(22,163,74,.15);
+      --good-bd:rgba(22,163,74,.3);
+      --good-tx:#86efac;
+      --bad-bg:rgba(220,38,38,.15);
+      --bad-bd:rgba(220,38,38,.3);
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+      background:var(--bg); color:var(--text); margin:0;
+      padding:16px; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+      -webkit-tap-highlight-color: transparent;
+    }
     .wrap{max-width:980px;margin:0 auto}
-    .card{background:#0b1220;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px;margin-bottom:16px}
+    h2{margin:0 0 12px; font-size:22px; line-height:1.2}
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:16px;
+      margin-bottom:16px;
+    }
+
+    /* Grid: single column on mobile, 3 cols ≥760px */
     .grid{display:grid;gap:10px}
     @media(min-width:760px){.grid{grid-template-columns:repeat(3,1fr)}}
-    label{font-size:12px;color:#94a3b8;margin-bottom:4px;display:block}
-    input{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:#0a0f1e;color:#e5e7eb;font-size:14px}
-    button{padding:10px 12px;border:0;border-radius:10px;background:#2563eb;color:#fff;font-weight:600;cursor:pointer}
-    .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
-    .btn-secondary{background:#334155}
-    .btn-danger{background:#dc2626}
-    .stat{display:flex;justify-content:space-between;padding:10px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:#0a0f1e;margin-top:8px}
-    .pill{padding:2px 8px;border-radius:999px;font-size:12px;font-weight:700}
-    .good{background:rgba(22,163,74,.15);color:#86efac;border:1px solid rgba(22,163,74,.3)}
-    .bad{background:rgba(220,38,38,.15);color:#fecaca;border:1px solid rgba(220,38,38,.3)}
-    table{width:100%;border-collapse:collapse;margin-top:8px}
-    th,td{padding:10px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left;font-size:14px;vertical-align:middle}
-    th{color:#94a3b8;font-weight:600}
-    .small{font-size:12px;color:#94a3b8}
-    .actions{display:flex;gap:8px}
-    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    .muted{color:#94a3b8;font-size:12px}
+
+    /* Labels & Inputs */
+    label{font-size:12px;color:var(--muted);margin-bottom:4px;display:block}
+    input{
+      width:100%; padding:12px 12px; border-radius:12px;
+      border:1px solid var(--border); background:var(--card2); color:var(--text);
+      font-size:16px; /* ≥16px prevents iOS zoom on focus */
+      line-height:1.3;
+    }
+    input:focus{outline:2px solid rgba(37,99,235,.5); outline-offset:1px}
+
+    /* Buttons */
+    button{
+      padding:12px 14px; border:0; border-radius:12px; background:var(--btn); color:#fff;
+      font-weight:600; cursor:pointer; font-size:16px; line-height:1.3;
+      min-height:44px; /* finger-friendly */
+    }
+    button:disabled{opacity:.6; cursor:not-allowed}
+    .btns{display:flex; gap:10px; flex-wrap:wrap; margin-top:8px}
+    .btn-secondary{background:var(--btn2)}
+    .btn-danger{background:var(--danger)}
+    /* On mobile, make action buttons fill width nicely */
+    @media(max-width:759px){
+      .btns button{flex:1 1 48%}
+    }
+
+    /* Utility rows */
+    .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+    .muted{color:var(--muted); font-size:12px}
     .hidden{display:none}
+
+    /* Stats & pills */
+    .stat{
+      display:flex; justify-content:space-between; gap:8px;
+      padding:12px; border:1px solid var(--border); border-radius:12px; background:var(--card2);
+      margin-top:8px; font-size:14px;
+    }
+    .pill{padding:3px 10px; border-radius:999px; font-size:12px; font-weight:700; vertical-align:middle}
+    .good{background:var(--good-bg); color:var(--good-tx); border:1px solid var(--good-bd)}
+    .bad{background:var(--bad-bg); color:#fecaca; border:1px solid var(--bad-bd)}
+
+    /* Table (scrollable on small screens) */
+    .table-wrap{overflow:auto; -webkit-overflow-scrolling:touch; border-radius:10px}
+    table{width:100%; border-collapse:collapse; min-width:640px}
+    th,td{padding:10px; border-bottom:1px solid rgba(255,255,255,.06); text-align:left; font-size:14px; vertical-align:middle}
+    th{color:var(--muted); font-weight:600; background:rgba(255,255,255,.02); position:sticky; top:0; backdrop-filter:saturate(1.2) blur(2px)}
+    .actions{display:flex; gap:8px}
+    @media(max-width:759px){
+      .actions button{min-width:96px}
+    }
   </style>
 </head>
 <body>
@@ -36,23 +104,27 @@
 
     <!-- ===== Sign-in (Email Link) ===== -->
     <div class="card" id="signinCard">
-      <div class="row" style="justify-content:space-between;">
-        <div>
+      <div class="row" style="justify-content:space-between; align-items:flex-end">
+        <div style="flex:1 1 260px; min-width:240px">
           <label>Email (passwordless)</label>
-          <input id="email" type="email" placeholder="you@example.com" autocomplete="email"/>
+          <input id="email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com"/>
         </div>
-        <div class="row">
-          <button id="sendLink">Send magic link</button>
-          <span id="sendStatus" class="muted"></span>
+        <div class="row" style="flex:1 1 180px; min-width:180px">
+          <button id="sendLink" style="width:100%">Send magic link</button>
         </div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <span id="sendStatus" class="muted"></span>
       </div>
 
       <div id="step-complete" class="hidden" style="margin-top:8px">
         <div id="needEmail" class="hidden">
           <label>Confirm your email</label>
-          <input id="confirmEmail" type="email" placeholder="you@example.com" autocomplete="email"/>
-          <button id="finishWithEmail">Finish sign-in</button>
-          <span id="finishStatus" class="muted"></span>
+          <input id="confirmEmail" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com"/>
+          <div class="row" style="margin-top:8px">
+            <button id="finishWithEmail" style="flex:1">Finish sign-in</button>
+            <span id="finishStatus" class="muted"></span>
+          </div>
         </div>
       </div>
 
@@ -85,7 +157,7 @@
           <button id="saveBtn">Save Card to Firebase</button>
           <button id="updateBtn" class="btn-secondary" style="display:none">Update Card</button>
           <button id="cancelEditBtn" class="btn-secondary" style="display:none">Cancel Edit</button>
-          <span id="calcStatus" class="muted"></span>
+          <span id="calcStatus" class="muted" style="min-height:20px"></span>
         </div>
 
         <div id="results" style="margin-top:8px;display:none">
@@ -96,22 +168,24 @@
           <div class="stat"><span>PSA 10 Profit/Loss</span><span id="r_p10"></span></div>
           <div class="stat"><span>Expected Profit (Gem% × P10 + (1−Gem%) × P9)</span><span id="r_ev"></span></div>
           <div class="stat"><span>Decision</span><b id="r_decision" class="pill"></b></div>
-          <div class="small">Decision rule: <b>YES</b> if Gem Rate ≥ 60% and EV ≥ $0.</div>
+          <div class="muted">Decision rule: <b>YES</b> if Gem Rate ≥ 60% and EV ≥ $0.</div>
         </div>
       </div>
 
       <!-- Live list (per-user) -->
       <div class="card">
         <h3 style="margin:4px 0 8px">Saved Cards (Live)</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Card</th><th>Raw</th><th>9</th><th>10</th><th>Gem%</th><th>EV</th><th>Decision</th><th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="cardsTbody"></tbody>
-        </table>
-        <div class="small">Data is stored under your account at <code>users/{uid}/cards</code>.</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Card</th><th>Raw</th><th>9</th><th>10</th><th>Gem%</th><th>EV</th><th>Decision</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="cardsTbody"></tbody>
+          </table>
+        </div>
+        <div class="muted" style="margin-top:6px">Data is stored under your account at <code>users/{uid}/cards</code>.</div>
       </div>
     </div>
   </div>
@@ -188,7 +262,6 @@
         await signInWithEmailLink(auth, email, window.location.href);
         localStorage.removeItem("emailForSignIn");
         $("finishStatus").textContent = "";
-        // Clean URL
         history.replaceState({}, document.title, window.location.pathname);
       } catch (err) {
         console.error(err);
@@ -213,13 +286,11 @@
 
     onAuthStateChanged(auth, (user) => {
       if (user) {
-        // UI show app
         show("authed", true);
         show("signinCard", true);
         show("app", true);
         $("who").textContent = user.email || user.uid;
 
-        // Set per-user collection and subscribe
         userCardsRef = collection(db, `users/${user.uid}/cards`);
         if (unsubList) unsubList();
         unsubList = onSnapshot(query(userCardsRef, orderBy("createdAt","desc")), renderList);
@@ -337,7 +408,7 @@
       $("gemRate").value = data.gemRatePct ? (data.gemRatePct*100).toFixed(0) : "60";
       calc();
 
-      $("saveBtn").style.display = "none";
+      $("saveBtn").style.display = "inline-block";
       $("updateBtn").style.display = "inline-block";
       $("cancelEditBtn").style.display = "inline-block";
     }
