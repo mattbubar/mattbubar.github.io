@@ -3,26 +3,47 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Magic Link Sign-In</title>
+  <title>Grading Calculator • Sign In + App</title>
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; max-width: 520px; margin: 24px auto; padding: 0 16px; }
-    .card { border: 1px solid #e5e7eb; border-radius: 14px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,.05); }
-    button { padding: 10px 14px; border: 0; border-radius: 10px; cursor: pointer; }
-    button.primary { background: black; color: white; }
-    input[type="email"] { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 10px; margin: 8px 0 12px; }
-    .muted { color: #6b7280; font-size: 12px; }
-    .row { display: flex; gap: 8px; align-items: center; }
+    :root { --border:#e5e7eb; --muted:#6b7280; }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; max-width: 980px; margin: 24px auto; padding: 0 16px; }
+    h1 { font-size: 22px; margin-bottom: 12px; }
+    .grid { display: grid; gap: 12px; }
+    .card { border: 1px solid var(--border); border-radius: 14px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,.05); background:#fff; }
+    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .muted { color: var(--muted); font-size: 12px; }
     .hidden { display: none; }
+
+    input[type="text"], input[type="number"] {
+      width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 10px;
+    }
+    label { font-size: 12px; color: #374151; }
+    .btn { padding: 10px 14px; border: 0; border-radius: 10px; cursor: pointer; }
+    .btn.primary { background: black; color: white; }
+    .btn.ghost { background: #f3f4f6; }
+    .right { text-align: right; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px; border-bottom: 1px solid var(--border); font-size: 14px; }
+    th { text-align: left; background: #fafafa; position: sticky; top: 0; }
+    .kpi { font-size: 14px; }
+    .kpi strong { font-size: 18px; }
+    .pill { display:inline-block; padding:2px 8px; border-radius:999px; background:#f3f4f6; font-size:12px; }
+    @media (min-width: 920px) {
+      .cols-2 { grid-template-columns: 1fr 1fr; }
+      .cols-3 { grid-template-columns: repeat(3, 1fr); }
+    }
   </style>
 </head>
 <body>
-  <h1>Sign in to Grading Calculator</h1>
+  <h1>Grading Calculator</h1>
 
+  <!-- ======== SIGN IN UI ======== -->
   <div class="card" id="step-send">
     <label for="email">Email</label>
     <input id="email" type="email" placeholder="you@example.com" autocomplete="email" />
     <div class="row">
-      <button class="primary" id="sendLink">Send magic link</button>
+      <button class="btn primary" id="sendLink">Send magic link</button>
       <span class="muted" id="sendStatus"></span>
     </div>
     <p class="muted">We’ll email you a one-tap sign-in link. No password needed.</p>
@@ -34,81 +55,170 @@
       <p class="muted">For security, confirm your email to complete sign-in:</p>
       <input id="confirmEmail" type="email" placeholder="you@example.com" autocomplete="email" />
       <div class="row">
-        <button class="primary" id="finishWithEmail">Finish sign-in</button>
+        <button class="btn primary" id="finishWithEmail">Finish sign-in</button>
         <span class="muted" id="finishStatus"></span>
       </div>
     </div>
   </div>
 
   <div class="card hidden" id="authed">
-    <p>Signed in as <strong id="who"></strong></p>
-    <div class="row">
-      <button id="signOut">Sign out</button>
-      <span class="muted" id="authStatus"></span>
+    <div class="row" style="justify-content:space-between;">
+      <div>Signed in as <strong id="who"></strong></div>
+      <div class="row">
+        <span class="pill" id="projInfo"></span>
+        <button class="btn ghost" id="signOut">Sign out</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======== APP (HIDDEN UNTIL AUTH) ======== -->
+  <div id="app" class="hidden grid" style="gap:16px;">
+    <!-- INPUTS -->
+    <div class="card">
+      <div class="grid cols-3">
+        <div>
+          <label>Card name</label>
+          <input id="cardName" type="text" placeholder="1991 SkyBox #546 Michael Jordan"/>
+        </div>
+        <div>
+          <label>Raw cost ($)</label>
+          <input id="rawCost" type="number" step="0.01" value="12.00"/>
+        </div>
+        <div>
+          <label>Grading fee ($)</label>
+          <input id="gradeFee" type="number" step="0.01" value="19.00"/>
+        </div>
+
+        <div>
+          <label>PSA 10 sale price ($)</label>
+          <input id="price10" type="number" step="0.01" value="120.00"/>
+        </div>
+        <div>
+          <label>PSA 9 sale price ($)</label>
+          <input id="price9" type="number" step="0.01" value="35.00"/>
+        </div>
+        <div>
+          <label>Gem rate (%)</label>
+          <input id="gemRate" type="number" step="0.1" value="60"/>
+        </div>
+
+        <div>
+          <label>eBay fee (%)</label>
+          <input id="feePct" type="number" step="0.1" value="12.5"/>
+        </div>
+        <div>
+          <label>Ship/other costs ($)</label>
+          <input id="otherCost" type="number" step="0.01" value="0.00"/>
+        </div>
+        <div>
+          <label>Qty (optional)</label>
+          <input id="qty" type="number" step="1" value="1"/>
+        </div>
+      </div>
+      <div class="row" style="margin-top:12px;">
+        <button class="btn primary" id="calcBtn">Calculate</button>
+        <button class="btn ghost" id="saveBtn" disabled>Save</button>
+        <span class="muted" id="calcStatus"></span>
+      </div>
+    </div>
+
+    <!-- RESULTS -->
+    <div class="card">
+      <div class="grid cols-3 kpi">
+        <div>Expected Value (per card)<br><strong id="evOut">$0.00</strong></div>
+        <div>Profit if PSA 10<br><strong id="p10Out">$0.00</strong></div>
+        <div>Profit if PSA 9<br><strong id="p9Out">$0.00</strong></div>
+      </div>
+      <div class="grid cols-3 kpi" style="margin-top:10px;">
+        <div>Breakeven PSA 10 price<br><strong id="breakeven10Out">$0.00</strong></div>
+        <div>Total EV (qty)<br><strong id="totalEvOut">$0.00</strong></div>
+        <div>Net cost per card (raw+grade+other)<br><strong id="netCostOut">$0.00</strong></div>
+      </div>
+    </div>
+
+    <!-- SAVED LIST -->
+    <div class="card">
+      <div class="row" style="justify-content:space-between;">
+        <h2 style="margin:0;font-size:18px;">Saved Cards</h2>
+        <span class="muted" id="saveStatus"></span>
+      </div>
+      <div style="overflow:auto; max-height:420px;">
+        <table id="cardsTable">
+          <thead>
+            <tr>
+              <th>When</th>
+              <th>Card</th>
+              <th class="right">EV</th>
+              <th class="right">P10</th>
+              <th class="right">P9</th>
+              <th class="right">Net Cost</th>
+              <th class="right">Qty</th>
+              <th class="right">Total EV</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="cardsTbody"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
   <div id="debug" class="muted" style="margin-top:12px;"></div>
 
+  <!-- ======== SCRIPT ======== -->
   <script type="module">
     // --- Firebase v11 (CDN) ---
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
     import {
-      initializeAuth,
-      onAuthStateChanged,
-      signOut,
-      setPersistence,
-      browserLocalPersistence,
-      browserPopupRedirectResolver,
-      isSignInWithEmailLink,
-      sendSignInLinkToEmail,
-      signInWithEmailLink
+      initializeAuth, onAuthStateChanged, signOut, setPersistence,
+      browserLocalPersistence, browserPopupRedirectResolver,
+      isSignInWithEmailLink, sendSignInLinkToEmail, signInWithEmailLink
     } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-
-    // OPTIONAL: Firebase Analytics via CDN (if you really want it)
+    import {
+      initializeFirestore, collection, addDoc, serverTimestamp, onSnapshot,
+      query, orderBy, doc, deleteDoc
+    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+    // OPTIONAL analytics:
     // import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-analytics.js";
 
-    // --- Your Firebase config (use exactly what Firebase Console shows) ---
+    // --- Your Firebase config (from your console) ---
     const firebaseConfig = {
       apiKey: "AIzaSyBvUBx-QTjTyzv8oWxoCX4rweq72yChS3M",
       authDomain: "grading-calculator-ce36f.firebaseapp.com",
       projectId: "grading-calculator-ce36f",
-      // storageBucket is optional if you don't use Storage. If you do, double-check the domain:
-      // The typical format is "<project-id>.appspot.com"
       // storageBucket: "grading-calculator-ce36f.appspot.com",
       messagingSenderId: "406763572625",
       appId: "1:406763572625:web:026a965c194d9a3c8cde30",
       measurementId: "G-GRKKZPC8VV"
     };
 
-    // --- Initialize Firebase ONCE ---
+    // --- Initialize Firebase (once) ---
     const app = initializeApp(firebaseConfig);
     const auth = initializeAuth(app, {
       persistence: browserLocalPersistence,
       popupRedirectResolver: browserPopupRedirectResolver
     });
-
-    // OPTIONAL: only if you want analytics and have measurementId set
-    // const analytics = getAnalytics(app);
+    // If you see iOS long-polling issues with Firestore, you can switch to initializeFirestore(app, {experimentalForceLongPolling:true})
+    const db = initializeFirestore(app, {});
 
     // --- UI helpers ---
     const $ = (id) => document.getElementById(id);
     const show = (id, yes = true) => $(id).classList.toggle("hidden", !yes);
     const setText = (id, text) => $(id).textContent = text ?? "";
+    const fmt = (n) => isFinite(n) ? n.toLocaleString(undefined, {style:'currency', currency:'USD'}) : '—';
 
-    // --- ActionCodeSettings for Email Link ---
+    // ===== Email Link ActionCodeSettings =====
     const actionCodeSettings = {
-      url: `${window.location.origin}${window.location.pathname}`, // return here
+      url: `${window.location.origin}${window.location.pathname}`,
       handleCodeInApp: true,
       // dynamicLinkDomain: "yourcustom.page.link" // optional if configured
     };
 
-    // --- Send magic link ---
+    // ===== Send magic link =====
     $("sendLink").addEventListener("click", async () => {
       const email = $("email").value.trim();
       setText("sendStatus", "");
       if (!email) { setText("sendStatus", "Enter a valid email."); return; }
-
       try {
         await setPersistence(auth, browserLocalPersistence);
         await sendSignInLinkToEmail(auth, email, actionCodeSettings);
@@ -120,21 +230,18 @@
       }
     });
 
-    // --- Complete sign-in if this page is opened via the link ---
+    // ===== Complete sign-in if opened via email link =====
     async function tryCompleteSignIn() {
       try {
         if (!isSignInWithEmailLink(auth, window.location.href)) return;
-
         show("step-send", false);
         show("step-complete", true);
 
         let email = window.localStorage.getItem("emailForSignIn");
         if (!email) {
-          // Opened on a different device/browser: ask user to re-enter email.
           show("needEmail", true);
           return;
         }
-
         await finishSignIn(email);
       } catch (err) {
         console.error(err);
@@ -149,7 +256,6 @@
         await signInWithEmailLink(auth, email, window.location.href);
         window.localStorage.removeItem("emailForSignIn");
         setText("finishStatus", "");
-        // Clean the URL (remove oobCode/etc)
         window.history.replaceState({}, document.title, window.location.pathname);
       } catch (err) {
         console.error(err);
@@ -163,20 +269,30 @@
       await finishSignIn(email);
     });
 
-    // --- Auth state listener ---
+    // ===== Auth state -> show app =====
+    let unsubscribeCards = null;
+
     onAuthStateChanged(auth, (user) => {
       if (user) {
         show("step-send", false);
         show("step-complete", false);
         show("authed", true);
+        show("app", true);
         setText("who", user.email || user.uid);
+        setText("projInfo", `${firebaseConfig.projectId}`);
+        // Start live query for user's cards
+        if (unsubscribeCards) unsubscribeCards();
+        const q = query(collection(db, `users/${user.uid}/cards`), orderBy("createdAt", "desc"));
+        unsubscribeCards = onSnapshot(q, (snap) => renderCards(snap));
       } else {
         show("authed", false);
+        show("app", false);
         show("step-send", true);
+        if (unsubscribeCards) { unsubscribeCards(); unsubscribeCards = null; }
+        $("cardsTbody").innerHTML = "";
       }
     });
 
-    // --- Sign out ---
     $("signOut").addEventListener("click", async () => {
       setText("authStatus", "");
       try {
@@ -188,8 +304,134 @@
       }
     });
 
-    // Try to complete sign-in on load (when returning from email link)
+    // Try to complete sign-in on load
     tryCompleteSignIn();
+
+    // ====== Calculator logic ======
+    function readInputs() {
+      const get = (id) => parseFloat($(id).value);
+      return {
+        cardName: $("#cardName").value.trim(),
+        rawCost: get("rawCost") || 0,
+        gradeFee: get("gradeFee") || 0,
+        price10: get("price10") || 0,
+        price9: get("price9") || 0,
+        gemRate: (get("gemRate") || 0) / 100,   // convert % -> 0-1
+        feePct: (get("feePct") || 0) / 100,
+        otherCost: get("otherCost") || 0,
+        qty: Math.max(1, Math.floor(get("qty") || 1)),
+      };
+    }
+
+    function compute(vals) {
+      const netFee10 = vals.price10 * (1 - vals.feePct);
+      const netFee9  = vals.price9  * (1 - vals.feePct);
+      const netCost  = vals.rawCost + vals.gradeFee + vals.otherCost;
+
+      const profit10 = netFee10 - netCost;
+      const profit9  = netFee9  - netCost;
+
+      const ev = vals.gemRate * profit10 + (1 - vals.gemRate) * profit9;
+      const totalEV = ev * vals.qty;
+
+      // Breakeven PSA10 price given PSA9 outcome & gem rate:
+      // ev = g*(P10*(1-fee)-netCost) + (1-g)*(P9*(1-fee)-netCost) = 0
+      // Solve for P10:
+      let breakeven10 = null;
+      if (vals.gemRate > 0) {
+        const numerator = netCost - (1 - vals.gemRate) * (vals.price9 * (1 - vals.feePct) - netCost);
+        breakeven10 = numerator / (vals.gemRate * (1 - vals.feePct));
+      }
+
+      return { ev, totalEV, profit10, profit9, netCost, breakeven10 };
+    }
+
+    function updateOutputs(calc) {
+      setText("evOut", fmt(calc.ev));
+      setText("p10Out", fmt(calc.profit10));
+      setText("p9Out", fmt(calc.profit9));
+      setText("totalEvOut", fmt(calc.totalEV));
+      setText("netCostOut", fmt(calc.netCost));
+      setText("breakeven10Out", calc.breakeven10 ? fmt(calc.breakeven10) : "—");
+    }
+
+    $("calcBtn").addEventListener("click", () => {
+      const vals = readInputs();
+      const calc = compute(vals);
+      updateOutputs(calc);
+      setText("calcStatus", "Calculated.");
+      $("#saveBtn").disabled = false;
+      // Stash last calc in memory for save
+      window.__lastVals = vals;
+      window.__lastCalc = calc;
+      setTimeout(() => setText("calcStatus",""), 1500);
+    });
+
+    $("saveBtn").addEventListener("click", async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+      if (!window.__lastVals || !window.__lastCalc) {
+        setText("saveStatus","Calculate first."); return;
+      }
+      const v = window.__lastVals, c = window.__lastCalc;
+
+      try {
+        setText("saveStatus","Saving…");
+        await addDoc(collection(db, `users/${user.uid}/cards`), {
+          cardName: v.cardName || "(untitled)",
+          rawCost: v.rawCost, gradeFee: v.gradeFee, price10: v.price10, price9: v.price9,
+          gemRate: v.gemRate, feePct: v.feePct, otherCost: v.otherCost, qty: v.qty,
+          ev: c.ev, totalEV: c.totalEV, profit10: c.profit10, profit9: c.profit9,
+          netCost: c.netCost, breakeven10: c.breakeven10 ?? null,
+          createdAt: serverTimestamp()
+        });
+        setText("saveStatus","Saved.");
+        setTimeout(()=>setText("saveStatus",""),1200);
+      } catch (err) {
+        console.error(err);
+        setText("saveStatus", err.message || "Save failed.");
+      }
+    });
+
+    function renderCards(snap) {
+      const tbody = $("cardsTbody");
+      tbody.innerHTML = "";
+      snap.forEach(docSnap => {
+        const d = docSnap.data();
+        const tr = document.createElement("tr");
+        const when = d.createdAt?.toDate ? d.createdAt.toDate() : null;
+        tr.innerHTML = `
+          <td>${when ? when.toLocaleString() : ""}</td>
+          <td>${escapeHtml(d.cardName || "")}</td>
+          <td class="right">${fmt(d.ev)}</td>
+          <td class="right">${fmt(d.profit10)}</td>
+          <td class="right">${fmt(d.profit9)}</td>
+          <td class="right">${fmt(d.netCost)}</td>
+          <td class="right">${d.qty ?? 1}</td>
+          <td class="right">${fmt(d.totalEV)}</td>
+          <td class="right"><button class="btn ghost" data-id="${docSnap.id}">Delete</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // bind deletes
+      tbody.querySelectorAll("button[data-id]").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const user = auth.currentUser;
+          if (!user) return;
+          try {
+            await deleteDoc(doc(db, `users/${user.uid}/cards/${btn.dataset.id}`));
+          } catch (err) {
+            console.error(err);
+            alert(err.message || "Delete failed.");
+          }
+        });
+      });
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, (m)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;' }[m]));
+    }
   </script>
 </body>
 </html>
