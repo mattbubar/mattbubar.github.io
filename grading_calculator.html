@@ -96,11 +96,55 @@
     @media(max-width:759px){
       .actions button{min-width:96px}
     }
+	/* Default (your current navy/slate) stays in :root.
+	   Add these four themes — they override the same CSS variables. */
+
+	body.theme-emerald {
+	  --bg:#0f172a; --card:#0a1f1c; --card2:#0a0f1e; --border:rgba(255,255,255,.08);
+	  --muted:#94a3b8; --text:#f1f5f9; --btn:#10b981; --btn2:#374151; --danger:#dc2626;
+	  --good-bg:rgba(22,163,74,.15); --good-bd:rgba(22,163,74,.3); --good-tx:#86efac;
+	  --bad-bg:rgba(220,38,38,.15); --bad-bd:rgba(220,38,38,.3); --bad-tx:#fecaca;
+	}
+
+	body.theme-retro {
+	  --bg:#1c1917; --card:#292524; --card2:#1f1b19; --border:rgba(255,255,255,.08);
+	  --muted:#d6d3d1; --text:#f5f5f4; --btn:#f59e0b; --btn2:#6b7280; --danger:#ef4444;
+	  --good-bg:rgba(234,179,8,.15); --good-bd:rgba(234,179,8,.3); --good-tx:#fde68a;
+	  --bad-bg:rgba(220,38,38,.15); --bad-bd:rgba(220,38,38,.3); --bad-tx:#fecaca;
+	}
+
+	body.theme-mint {
+	  --bg:#ecfeff; --card:#ffffff; --card2:#f8fafc; --border:#e2e8f0;
+	  --muted:#64748b; --text:#0f172a; --btn:#0ea5e9; --btn2:#e2e8f0; --danger:#ef4444;
+	  --good-bg:rgba(14,165,233,.1); --good-bd:rgba(14,165,233,.3); --good-tx:#0ea5e9;
+	  --bad-bg:rgba(220,38,38,.1); --bad-bd:rgba(220,38,38,.3); --bad-tx:#b91c1c;
+	}
+
+	body.theme-neon {
+	  --bg:#0f0f1a; --card:#1a1a2e; --card2:#111122; --border:rgba(255,255,255,.08);
+	  --muted:#94a3b8; --text:#f9fafb; --btn:#e11d48; --btn2:#22d3ee; --danger:#facc15;
+	  --good-bg:rgba(34,211,238,.15); --good-bd:rgba(34,211,238,.3); --good-tx:#22d3ee;
+	  --bad-bg:rgba(225,29,72,.15); --bad-bd:rgba(225,29,72,.3); --bad-tx:#fda4af;
+	}
   </style>
 </head>
 <body>
   <div class="wrap">
     <h2>Card Grading Profit & EV Calculator (Email Link + Firebase Edit/Delete)</h2>
+<div class="card" style="display:flex;align-items:center;gap:10px;justify-content:space-between;">
+  <div class="muted">Theme</div>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <button id="themePrev" class="btn-secondary" type="button">◀</button>
+    <select id="themeSelect" style="min-width:170px;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--card2);color:var(--text)">
+      <option value="default">Default (Navy)</option>
+      <option value="emerald">Emerald & Slate</option>
+      <option value="retro">Retro Cardboard</option>
+      <option value="mint">Mint Ice</option>
+      <option value="neon">Neon Night</option>
+    </select>
+    <button id="themeNext" class="btn-secondary" type="button">▶</button>
+  </div>
+</div>
 
     <!-- ===== Sign-in (Email Link) ===== -->
     <div class="card" id="signinCard">
@@ -224,6 +268,47 @@
       popupRedirectResolver: browserPopupRedirectResolver
     });
     const db = getFirestore(app);
+	
+	// ===== THEME SWITCHER =====
+	const THEMES = ["default", "emerald", "retro", "mint", "neon"];
+
+	function applyTheme(key) {
+	  // Remove any previous theme-* class
+	  document.body.classList.remove("theme-emerald","theme-retro","theme-mint","theme-neon");
+	  // Map key to class
+	  const cls = ({
+	    emerald: "theme-emerald",
+	    retro:   "theme-retro",
+	    mint:    "theme-mint",
+	    neon:    "theme-neon",
+	    default: ""            // no class -> default :root
+	  })[key] || "";
+	  if (cls) document.body.classList.add(cls);
+	  // Persist + reflect selection
+	  localStorage.setItem("gc_theme", key);
+	  const sel = document.getElementById("themeSelect");
+	  if (sel) sel.value = key;
+	}
+
+	function cycleTheme(dir = 1) {
+	  const cur = localStorage.getItem("gc_theme") || "default";
+	  const idx = THEMES.indexOf(cur);
+	  const next = THEMES[(idx + dir + THEMES.length) % THEMES.length];
+	  applyTheme(next);
+	}
+
+	// Init on load
+	(function initTheme(){
+	  const saved = localStorage.getItem("gc_theme") || "default";
+	  applyTheme(saved);
+	  const sel = document.getElementById("themeSelect");
+	  const prevBtn = document.getElementById("themePrev");
+	  const nextBtn = document.getElementById("themeNext");
+	  if (sel) sel.addEventListener("change", (e)=>applyTheme(e.target.value));
+	  if (prevBtn) prevBtn.addEventListener("click", ()=>cycleTheme(-1));
+	  if (nextBtn) nextBtn.addEventListener("click", ()=>cycleTheme(+1));
+	})();
+	
 
     // ===== Helpers =====
     const $ = (id) => document.getElementById(id);
