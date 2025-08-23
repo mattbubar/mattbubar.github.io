@@ -1,229 +1,405 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Grading Calculator</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Card Grading Calculator + Firebase (Email Link + Edit/Delete)</title>
   <style>
-    body {
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background: #e0f2fe; /* light blue background */
-      margin: 0; padding: 0;
-    }
-    main {
-      max-width: 700px;
-      margin: 40px auto;
-      padding: 20px;
-      background: white;
-      border-radius: 16px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    h1 { margin-top: 0; text-align: center; }
-    .card { margin: 20px 0; }
-    label { font-size: 14px; display:block; margin-bottom:4px; }
-    input[type="number"], input[type="text"], input[type="email"] {
-      width: 100%; padding: 8px; border: 1px solid #d1d5db;
-      border-radius: 8px; margin-bottom: 12px;
-    }
-    button { padding: 10px 16px; border: none; border-radius: 8px; cursor: pointer; }
-    .primary { background:#2563eb; color:white; }
-    .ghost { background:#f3f4f6; }
-    .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-    .muted { font-size: 12px; color:#6b7280; }
-    table { width:100%; border-collapse:collapse; margin-top:16px; }
-    th,td { padding:8px; border-bottom:1px solid #e5e7eb; font-size:14px; }
-    th { text-align:left; background:#f9fafb; }
-    .right { text-align:right; }
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:#0f172a;color:#e5e7eb;margin:0;padding:24px}
+    .wrap{max-width:980px;margin:0 auto}
+    .card{background:#0b1220;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px;margin-bottom:16px}
+    .grid{display:grid;gap:10px}
+    @media(min-width:760px){.grid{grid-template-columns:repeat(3,1fr)}}
+    label{font-size:12px;color:#94a3b8;margin-bottom:4px;display:block}
+    input{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:#0a0f1e;color:#e5e7eb;font-size:14px}
+    button{padding:10px 12px;border:0;border-radius:10px;background:#2563eb;color:#fff;font-weight:600;cursor:pointer}
+    .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+    .btn-secondary{background:#334155}
+    .btn-danger{background:#dc2626}
+    .stat{display:flex;justify-content:space-between;padding:10px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:#0a0f1e;margin-top:8px}
+    .pill{padding:2px 8px;border-radius:999px;font-size:12px;font-weight:700}
+    .good{background:rgba(22,163,74,.15);color:#86efac;border:1px solid rgba(22,163,74,.3)}
+    .bad{background:rgba(220,38,38,.15);color:#fecaca;border:1px solid rgba(220,38,38,.3)}
+    table{width:100%;border-collapse:collapse;margin-top:8px}
+    th,td{padding:10px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left;font-size:14px;vertical-align:middle}
+    th{color:#94a3b8;font-weight:600}
+    .small{font-size:12px;color:#94a3b8}
+    .actions{display:flex;gap:8px}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .muted{color:#94a3b8;font-size:12px}
+    .hidden{display:none}
   </style>
 </head>
 <body>
-  <main>
-    <h1>Grading Calculator</h1>
+  <div class="wrap">
+    <h2>Card Grading Profit & EV Calculator (Email Link + Firebase Edit/Delete)</h2>
 
-    <!-- Sign-in -->
-    <div id="step-send" class="card">
-      <label>Email</label>
-      <input id="email" type="email" placeholder="you@example.com" />
-      <button class="primary" id="sendLink">Send magic link</button>
-      <span class="muted" id="sendStatus"></span>
-    </div>
-    <div id="step-complete" class="card hidden">
-      <p>Finishing sign-in…</p>
-      <div id="needEmail" class="hidden">
-        <input id="confirmEmail" type="email" placeholder="Confirm your email" />
-        <button class="primary" id="finishWithEmail">Finish</button>
-        <span id="finishStatus" class="muted"></span>
+    <!-- ===== Sign-in (Email Link) ===== -->
+    <div class="card" id="signinCard">
+      <div class="row" style="justify-content:space-between;">
+        <div>
+          <label>Email (passwordless)</label>
+          <input id="email" type="email" placeholder="you@example.com" autocomplete="email"/>
+        </div>
+        <div class="row">
+          <button id="sendLink">Send magic link</button>
+          <span id="sendStatus" class="muted"></span>
+        </div>
+      </div>
+
+      <div id="step-complete" class="hidden" style="margin-top:8px">
+        <div id="needEmail" class="hidden">
+          <label>Confirm your email</label>
+          <input id="confirmEmail" type="email" placeholder="you@example.com" autocomplete="email"/>
+          <button id="finishWithEmail">Finish sign-in</button>
+          <span id="finishStatus" class="muted"></span>
+        </div>
+      </div>
+
+      <div id="authed" class="hidden" style="margin-top:8px">
+        <div class="row" style="justify-content:space-between;">
+          <div>Signed in as <strong id="who"></strong></div>
+          <div class="row">
+            <button id="signOut" class="btn-secondary">Sign out</button>
+          </div>
+        </div>
       </div>
     </div>
-    <div id="authed" class="card hidden">
-      Signed in as <strong id="who"></strong>
-      <button id="signOut" class="ghost">Sign out</button>
-    </div>
 
-    <!-- Calculator (hidden until auth) -->
+    <!-- ===== Calculator (hidden until auth) ===== -->
     <div id="app" class="hidden">
+      <!-- Calculator -->
       <div class="card">
-        <label>Card name</label>
-        <input id="cardName" type="text" placeholder="1991 SkyBox #546 MJ" />
-        <label>Raw cost ($)</label>
-        <input id="rawCost" type="number" value="12" />
-        <label>Grading fee ($)</label>
-        <input id="gradeFee" type="number" value="19" />
-        <label>PSA 10 sale price ($)</label>
-        <input id="price10" type="number" value="120" />
-        <label>PSA 9 sale price ($)</label>
-        <input id="price9" type="number" value="35" />
-        <label>Gem rate (%)</label>
-        <input id="gemRate" type="number" value="60" />
-        <label>eBay fee (%)</label>
-        <input id="feePct" type="number" value="12.5" />
-        <label>Other costs ($)</label>
-        <input id="otherCost" type="number" value="0" />
+        <div class="grid">
+          <div><label>Card Name</label><input id="cardName" placeholder="e.g., 1991 SkyBox #546 MJ"/></div>
+          <div><label>Raw Price ($)</label><input id="rawPrice" type="number" inputmode="decimal" value="20"/></div>
+          <div><label>Grading Fee ($)</label><input id="gradingFee" type="number" inputmode="decimal" value="21"/></div>
+          <div><label>PSA 9 Price ($)</label><input id="psa9Price" type="number" inputmode="decimal" value="25"/></div>
+          <div><label>PSA 10 Price ($)</label><input id="psa10Price" type="number" inputmode="decimal" value="100"/></div>
+          <div><label>eBay Fee (%)</label><input id="ebayFee" type="number" inputmode="decimal" value="12.5"/></div>
+          <div><label>Gem Rate (%)</label><input id="gemRate" type="number" inputmode="decimal" value="60"/></div>
+        </div>
 
-        <button class="primary" id="calcBtn">Calculate</button>
-        <button class="ghost" id="saveBtn" disabled>Save</button>
-        <span id="calcStatus" class="muted"></span>
+        <div class="btns">
+          <button id="calcBtn">Calculate</button>
+          <button id="saveBtn">Save Card to Firebase</button>
+          <button id="updateBtn" class="btn-secondary" style="display:none">Update Card</button>
+          <button id="cancelEditBtn" class="btn-secondary" style="display:none">Cancel Edit</button>
+          <span id="calcStatus" class="muted"></span>
+        </div>
+
+        <div id="results" style="margin-top:8px;display:none">
+          <div class="stat"><span>Total Cost (Raw + Grading)</span><b id="r_cost"></b></div>
+          <div class="stat"><span>PSA 9 Net (after fees)</span><span><b id="r_net9"></b> <span id="r_pill9" class="pill"></span></span></div>
+          <div class="stat"><span>PSA 10 Net (after fees)</span><span><b id="r_net10"></b> <span id="r_pill10" class="pill"></span></span></div>
+          <div class="stat"><span>PSA 9 Profit/Loss</span><span id="r_p9"></span></div>
+          <div class="stat"><span>PSA 10 Profit/Loss</span><span id="r_p10"></span></div>
+          <div class="stat"><span>Expected Profit (Gem% × P10 + (1−Gem%) × P9)</span><span id="r_ev"></span></div>
+          <div class="stat"><span>Decision</span><b id="r_decision" class="pill"></b></div>
+          <div class="small">Decision rule: <b>YES</b> if Gem Rate ≥ 60% and EV ≥ $0.</div>
+        </div>
       </div>
 
+      <!-- Live list (per-user) -->
       <div class="card">
-        <p>EV: <strong id="evOut">$0.00</strong></p>
-        <p>Profit if PSA10: <strong id="p10Out">$0.00</strong></p>
-        <p>Profit if PSA9: <strong id="p9Out">$0.00</strong></p>
-        <p>Net Cost: <strong id="netCostOut">$0.00</strong></p>
-        <p>Total EV: <strong id="totalEvOut">$0.00</strong></p>
-      </div>
-
-      <div class="card">
-        <h3>Saved</h3>
-        <span id="saveStatus" class="muted"></span>
+        <h3 style="margin:4px 0 8px">Saved Cards (Live)</h3>
         <table>
           <thead>
-            <tr><th>When</th><th>Card</th><th class="right">EV</th><th class="right">P10</th><th class="right">P9</th><th class="right">Net</th><th></th></tr>
+            <tr>
+              <th>Card</th><th>Raw</th><th>9</th><th>10</th><th>Gem%</th><th>EV</th><th>Decision</th><th>Actions</th>
+            </tr>
           </thead>
           <tbody id="cardsTbody"></tbody>
         </table>
+        <div class="small">Data is stored under your account at <code>users/{uid}/cards</code>.</div>
       </div>
     </div>
-  </main>
+  </div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import {
-  initializeAuth, onAuthStateChanged, signOut, setPersistence,
-  browserLocalPersistence, browserPopupRedirectResolver,
-  isSignInWithEmailLink, sendSignInLinkToEmail, signInWithEmailLink
-} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-import {
-  initializeFirestore, collection, addDoc, serverTimestamp, onSnapshot,
-  query, orderBy, doc, deleteDoc
-} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+  <!-- Firebase (module style) -->
+  <script type="module">
+    // Core Firebase
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBvUBx-QTjTyzv8oWxoCX4rweq72yChS3M",
-  authDomain: "grading-calculator-ce36f.firebaseapp.com",
-  projectId: "grading-calculator-ce36f",
-  messagingSenderId: "406763572625",
-  appId: "1:406763572625:web:026a965c194d9a3c8cde30",
-};
-const app = initializeApp(firebaseConfig);
-const auth = initializeAuth(app, { persistence: browserLocalPersistence, popupRedirectResolver: browserPopupRedirectResolver });
-const db = initializeFirestore(app, {});
+    // Auth (Email Link)
+    import {
+      initializeAuth, onAuthStateChanged, signOut, setPersistence,
+      browserLocalPersistence, browserPopupRedirectResolver,
+      isSignInWithEmailLink, sendSignInLinkToEmail, signInWithEmailLink
+    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
-const $ = id=>document.getElementById(id);
-const show=(id,yes=true)=>$(id).classList.toggle("hidden",!yes);
-const setText=(id,t)=>$(id).textContent=t??"";
-const fmt=n=>isFinite(n)?n.toLocaleString(undefined,{style:'currency',currency:'USD'}):"—";
+    // Firestore
+    import {
+      getFirestore, collection, addDoc, serverTimestamp, onSnapshot,
+      query, orderBy, doc, deleteDoc, updateDoc, getDoc
+    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-// === Auth ===
-const actionCodeSettings={url:window.location.href,handleCodeInApp:true};
-$("sendLink").onclick=async()=>{
-  const email=$("email").value.trim();
-  if(!email)return setText("sendStatus","Enter email");
-  await sendSignInLinkToEmail(auth,email,actionCodeSettings);
-  localStorage.setItem("emailForSignIn",email);
-  setText("sendStatus","Link sent!");
-};
-async function finishSignIn(email){
-  await signInWithEmailLink(auth,email,window.location.href);
-  localStorage.removeItem("emailForSignIn");
-  history.replaceState({},document.title,window.location.pathname);
-}
-if(isSignInWithEmailLink(auth,window.location.href)){
-  const email=localStorage.getItem("emailForSignIn");
-  if(email) finishSignIn(email); else show("needEmail",true);
-}
-$("finishWithEmail").onclick=()=>finishSignIn($("confirmEmail").value.trim());
-onAuthStateChanged(auth,user=>{
-  if(user){
-    show("step-send",false); show("step-complete",false);
-    show("authed",true); show("app",true);
-    setText("who",user.email);
-    const q=query(collection(db,`users/${user.uid}/cards`),orderBy("createdAt","desc"));
-    onSnapshot(q,snap=>renderCards(snap));
-  } else {
-    show("app",false); show("authed",false); show("step-send",true);
-  }
-});
-$("signOut").onclick=()=>signOut(auth);
+    // ==== Your Firebase config (project: grading-calculator-ce36f) ====
+    const firebaseConfig = {
+      apiKey: "AIzaSyBvUBx-QTjTyzv8oWxoCX4rweq72yChS3M",
+      authDomain: "grading-calculator-ce36f.firebaseapp.com",
+      projectId: "grading-calculator-ce36f",
+      messagingSenderId: "406763572625",
+      appId: "1:406763572625:web:026a965c194d9a3c8cde30"
+    };
 
-// === Calculator ===
-function readInputs(){
-  return{
-    cardName:$("#cardName").value.trim(),
-    rawCost:parseFloat($("#rawCost").value)||0,
-    gradeFee:parseFloat($("#gradeFee").value)||0,
-    price10:parseFloat($("#price10").value)||0,
-    price9:parseFloat($("#price9").value)||0,
-    gemRate:(parseFloat($("#gemRate").value)||0)/100,
-    feePct:(parseFloat($("#feePct").value)||0)/100,
-    otherCost:parseFloat($("#otherCost").value)||0,
-  };
-}
-function compute(v){
-  const netCost=v.rawCost+v.gradeFee+v.otherCost;
-  const net10=v.price10*(1-v.feePct)-netCost;
-  const net9=v.price9*(1-v.feePct)-netCost;
-  const ev=v.gemRate*net10+(1-v.gemRate)*net9;
-  return{ev,profit10:net10,profit9:net9,netCost,totalEV:ev};
-}
-$("calcBtn").onclick=()=>{
-  const v=readInputs(),c=compute(v);
-  setText("evOut",fmt(c.ev)); setText("p10Out",fmt(c.profit10));
-  setText("p9Out",fmt(c.profit9)); setText("netCostOut",fmt(c.netCost));
-  setText("totalEvOut",fmt(c.totalEV));
-  window.__last={v,c}; $("saveBtn").disabled=false;
-};
-$("saveBtn").onclick=async()=>{
-  const u=auth.currentUser;if(!u||!window.__last)return;
-  const {v,c}=window.__last;
-  await addDoc(collection(db,`users/${u.uid}/cards`),{
-    cardName:v.cardName, rawCost:v.rawCost, gradeFee:v.gradeFee, price10:v.price10,
-    price9:v.price9, gemRate:v.gemRate, feePct:v.feePct, otherCost:v.otherCost,
-    ev:c.ev, profit10:c.profit10, profit9:c.profit9, netCost:c.netCost, createdAt:serverTimestamp()
-  });
-  setText("saveStatus","Saved!"); setTimeout(()=>setText("saveStatus",""),1500);
-};
+    // Init
+    const app = initializeApp(firebaseConfig);
+    const auth = initializeAuth(app, {
+      persistence: browserLocalPersistence,
+      popupRedirectResolver: browserPopupRedirectResolver
+    });
+    const db = getFirestore(app);
 
-// === Render saved list ===
-function renderCards(snap){
-  const tbody=$("cardsTbody"); tbody.innerHTML="";
-  snap.forEach(docSnap=>{
-    const d=docSnap.data();
-    const tr=document.createElement("tr");
-    const when=d.createdAt?.toDate?d.createdAt.toDate().toLocaleString():"";
-    tr.innerHTML=`
-      <td>${when}</td><td>${d.cardName||""}</td>
-      <td class="right">${fmt(d.ev)}</td>
-      <td class="right">${fmt(d.profit10)}</td>
-      <td class="right">${fmt(d.profit9)}</td>
-      <td class="right">${fmt(d.netCost)}</td>
-      <td><button class="ghost" data-id="${docSnap.id}">Del</button></td>`;
-    tbody.appendChild(tr);
-  });
-  tbody.querySelectorAll("button[data-id]").forEach(btn=>{
-    btn.onclick=()=>deleteDoc(doc(db,`users/${auth.currentUser.uid}/cards/${btn.dataset.id}`));
-  });
-}
-</script>
+    // ===== Helpers =====
+    const $ = (id) => document.getElementById(id);
+    const money = (v) => "$" + (Number(v)||0).toFixed(2);
+    const pill = (el, ok) => { el.className = "pill " + (ok ? "good" : "bad"); el.textContent = ok ? "PROFIT" : "LOSS"; };
+    const show = (id, yes=true) => $(id).classList.toggle("hidden", !yes);
+    let editingId = null; // doc id being edited
+    let userCardsRef = null; // per-user collection ref
+    let unsubList = null;
+
+    // ===== Email Link Auth =====
+    const actionCodeSettings = {
+      url: `${window.location.origin}${window.location.pathname}`,
+      handleCodeInApp: true
+    };
+
+    $("sendLink").addEventListener("click", async () => {
+      const email = $("email").value.trim();
+      $("sendStatus").textContent = "";
+      if (!email) { $("sendStatus").textContent = "Enter a valid email."; return; }
+      try {
+        await setPersistence(auth, browserLocalPersistence);
+        await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+        localStorage.setItem("emailForSignIn", email);
+        $("sendStatus").textContent = "Link sent! Check your email.";
+      } catch (err) {
+        console.error(err);
+        $("sendStatus").textContent = err.message || "Could not send link.";
+      }
+    });
+
+    async function finishSignIn(email) {
+      $("finishStatus").textContent = "Signing you in…";
+      try {
+        await setPersistence(auth, browserLocalPersistence);
+        await signInWithEmailLink(auth, email, window.location.href);
+        localStorage.removeItem("emailForSignIn");
+        $("finishStatus").textContent = "";
+        // Clean URL
+        history.replaceState({}, document.title, window.location.pathname);
+      } catch (err) {
+        console.error(err);
+        $("finishStatus").textContent = err.message || "Could not complete sign-in.";
+      }
+    }
+
+    if (isSignInWithEmailLink(auth, window.location.href)) {
+      show("step-complete", true);
+      const email = localStorage.getItem("emailForSignIn");
+      if (email) {
+        await finishSignIn(email);
+      } else {
+        show("needEmail", true);
+        $("finishWithEmail").addEventListener("click", async () => {
+          const em = $("confirmEmail").value.trim();
+          if (!em) { $("finishStatus").textContent = "Enter your email."; return; }
+          await finishSignIn(em);
+        });
+      }
+    }
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // UI show app
+        show("authed", true);
+        show("signinCard", true);
+        show("app", true);
+        $("who").textContent = user.email || user.uid;
+
+        // Set per-user collection and subscribe
+        userCardsRef = collection(db, `users/${user.uid}/cards`);
+        if (unsubList) unsubList();
+        unsubList = onSnapshot(query(userCardsRef, orderBy("createdAt","desc")), renderList);
+      } else {
+        show("authed", false);
+        show("app", false);
+        show("signinCard", true);
+        if (unsubList) { unsubList(); unsubList = null; }
+        $("cardsTbody").innerHTML = "";
+      }
+    });
+
+    $("signOut").addEventListener("click", async () => {
+      try { await signOut(auth); } catch (e) { console.error(e); }
+    });
+
+    // ===== Calculator logic =====
+    function calc() {
+      const raw = parseFloat($("rawPrice").value)||0;
+      const grade = parseFloat($("gradingFee").value)||0;
+      const p9 = parseFloat($("psa9Price").value)||0;
+      const p10 = parseFloat($("psa10Price").value)||0;
+      const fee = (parseFloat($("ebayFee").value)||0)/100;
+      const gem = (parseFloat($("gemRate").value)||0)/100;
+
+      const cost = raw + grade;
+      const net9 = p9 * (1 - fee);
+      const net10 = p10 * (1 - fee);
+      const profit9 = net9 - cost;
+      const profit10 = net10 - cost;
+      const ev = gem * profit10 + (1 - gem) * profit9;
+      const pass = gem >= 0.60 && ev >= 0;
+
+      $("results").style.display = "block";
+      $("r_cost").textContent = money(cost);
+      $("r_net9").textContent = money(net9);
+      $("r_net10").textContent = money(net10);
+      pill($("r_pill9"), profit9 >= 0);
+      pill($("r_pill10"), profit10 >= 0);
+      $("r_p9").innerHTML = (profit9>=0?'<span class="pill good">+</span> ':'<span class="pill bad">−</span> ')+ money(Math.abs(profit9));
+      $("r_p10").innerHTML = (profit10>=0?'<span class="pill good">+</span> ':'<span class="pill bad">−</span> ')+ money(Math.abs(profit10));
+      $("r_ev").innerHTML = (ev>=0?'<span class="pill good">+</span> ':'<span class="pill bad">−</span> ')+ money(Math.abs(ev));
+      $("r_decision").className = "pill " + (pass ? "good" : "bad");
+      $("r_decision").textContent = pass ? "YES (Grade)" : "NO (Skip)";
+
+      return { raw, grade, p9, p10, feePct: fee, gemPct: gem, cost, net9, net10, profit9, profit10, ev, pass };
+    }
+
+    $("calcBtn").addEventListener("click", () => {
+      calc();
+      $("calcStatus").textContent = "Calculated.";
+      setTimeout(()=>$("calcStatus").textContent="",1200);
+    });
+
+    // ===== Save / Update =====
+    $("saveBtn").addEventListener("click", async () => {
+      const u = auth.currentUser;
+      if (!u) { alert("Sign in first."); return; }
+      const name = $("cardName").value.trim();
+      if (!name) { alert("Please enter a Card Name."); return; }
+      const r = calc();
+      try {
+        await addDoc(userCardsRef, {
+          name,
+          raw: r.raw, gradingFee: r.grade, psa9: r.p9, psa10: r.p10,
+          ebayFeePct: r.feePct, gemRatePct: r.gemPct,
+          cost: r.cost, net9: r.net9, net10: r.net10,
+          profit9: r.profit9, profit10: r.profit10, ev: r.ev,
+          decision: r.pass ? "YES" : "NO",
+          createdAt: serverTimestamp()
+        });
+        $("calcStatus").textContent = "Saved ✅";
+        setTimeout(()=>$("calcStatus").textContent="",1200);
+        clearEditing();
+      } catch (e) {
+        console.error(e);
+        alert(e.message || "Save failed.");
+      }
+    });
+
+    $("updateBtn").addEventListener("click", updateExisting);
+    $("cancelEditBtn").addEventListener("click", clearEditing);
+
+    async function updateExisting() {
+      const u = auth.currentUser;
+      if (!u || !editingId) return;
+      const r = calc();
+      const name = $("cardName").value.trim();
+      try {
+        await updateDoc(doc(db, `users/${u.uid}/cards/${editingId}`), {
+          name,
+          raw: r.raw, gradingFee: r.grade, psa9: r.p9, psa10: r.p10,
+          ebayFeePct: r.feePct, gemRatePct: r.gemPct,
+          cost: r.cost, net9: r.net9, net10: r.net10,
+          profit9: r.profit9, profit10: r.profit10, ev: r.ev,
+          decision: r.pass ? "YES" : "NO"
+        });
+        $("calcStatus").textContent = "Updated ✅";
+        setTimeout(()=>$("calcStatus").textContent="",1200);
+        clearEditing();
+      } catch (e) {
+        console.error(e);
+        alert(e.message || "Update failed.");
+      }
+    }
+
+    function enterEdit(docId, data) {
+      editingId = docId;
+      $("cardName").value = data.name || "";
+      $("rawPrice").value = data.raw ?? "";
+      $("gradingFee").value = data.gradingFee ?? "";
+      $("psa9Price").value = data.psa9 ?? "";
+      $("psa10Price").value = data.psa10 ?? "";
+      $("ebayFee").value = data.ebayFeePct ? (data.ebayFeePct*100).toFixed(2) : "12.5";
+      $("gemRate").value = data.gemRatePct ? (data.gemRatePct*100).toFixed(0) : "60";
+      calc();
+
+      $("saveBtn").style.display = "none";
+      $("updateBtn").style.display = "inline-block";
+      $("cancelEditBtn").style.display = "inline-block";
+    }
+
+    function clearEditing() {
+      editingId = null;
+      $("saveBtn").style.display = "inline-block";
+      $("updateBtn").style.display = "none";
+      $("cancelEditBtn").style.display = "none";
+    }
+
+    // ===== Live list (per-user) =====
+    const tbody = $("cardsTbody");
+
+    function renderList(snap) {
+      tbody.innerHTML = "";
+      snap.forEach(docSnap => {
+        const c = docSnap.data();
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${c.name || ""}</td>
+          <td>${money(c.raw)}</td>
+          <td>${money(c.psa9)}</td>
+          <td>${money(c.psa10)}</td>
+          <td>${Math.round((c.gemRatePct||0)*100)}%</td>
+          <td>${money(c.ev || 0)}</td>
+          <td><span class="pill ${c.decision==='YES'?'good':'bad'}">${c.decision||'NO'}</span></td>
+          <td class="actions">
+            <button class="btn-secondary" data-action="edit" data-id="${docSnap.id}">Edit</button>
+            <button class="btn-danger" data-action="delete" data-id="${docSnap.id}">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    tbody.addEventListener("click", async (e) => {
+      const btn = e.target.closest("button");
+      if (!btn) return;
+      const id = btn.getAttribute("data-id");
+      const action = btn.getAttribute("data-action");
+      const u = auth.currentUser;
+      if (!u) return;
+
+      if (action === "delete") {
+        if (confirm("Delete this card?")) {
+          try { await deleteDoc(doc(db, `users/${u.uid}/cards/${id}`)); }
+          catch (err) { console.error(err); alert(err.message || "Delete failed."); }
+        }
+      } else if (action === "edit") {
+        try {
+          const snap = await getDoc(doc(db, `users/${u.uid}/cards/${id}`));
+          if (snap.exists()) enterEdit(id, snap.data());
+        } catch (err) {
+          console.error(err);
+          alert(err.message || "Could not load document for edit.");
+        }
+      }
+    });
+
+    // Auto-calc once
+    window.addEventListener("DOMContentLoaded", calc);
+  </script>
 </body>
 </html>
