@@ -65,34 +65,31 @@
       signInWithEmailLink
     } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
-    // --- Your Firebase config (replace with yours) ---
-	// Import the functions you need from the SDKs you need
-	import { getAnalytics } from "firebase/analytics";
-	// TODO: Add SDKs for Firebase products that you want to use
-	// https://firebase.google.com/docs/web/setup#available-libraries
+    // OPTIONAL: Firebase Analytics via CDN (if you really want it)
+    // import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-analytics.js";
 
-	// Your web app's Firebase configuration
-	// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-	const firebaseConfig = {
-	  apiKey: "AIzaSyBvUBx-QTjTyzv8oWxoCX4rweq72yChS3M",
-	  authDomain: "grading-calculator-ce36f.firebaseapp.com",
-	  projectId: "grading-calculator-ce36f",
-	  storageBucket: "grading-calculator-ce36f.firebasestorage.app",
-	  messagingSenderId: "406763572625",
-	  appId: "1:406763572625:web:026a965c194d9a3c8cde30",
-	  measurementId: "G-GRKKZPC8VV"
-	};
+    // --- Your Firebase config (use exactly what Firebase Console shows) ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyBvUBx-QTjTyzv8oWxoCX4rweq72yChS3M",
+      authDomain: "grading-calculator-ce36f.firebaseapp.com",
+      projectId: "grading-calculator-ce36f",
+      // storageBucket is optional if you don't use Storage. If you do, double-check the domain:
+      // The typical format is "<project-id>.appspot.com"
+      // storageBucket: "grading-calculator-ce36f.appspot.com",
+      messagingSenderId: "406763572625",
+      appId: "1:406763572625:web:026a965c194d9a3c8cde30",
+      measurementId: "G-GRKKZPC8VV"
+    };
 
-	// Initialize Firebase
-	const app = initializeApp(firebaseConfig);
-	const analytics = getAnalytics(app);
-
-    // --- Init ---
+    // --- Initialize Firebase ONCE ---
     const app = initializeApp(firebaseConfig);
     const auth = initializeAuth(app, {
       persistence: browserLocalPersistence,
       popupRedirectResolver: browserPopupRedirectResolver
     });
+
+    // OPTIONAL: only if you want analytics and have measurementId set
+    // const analytics = getAnalytics(app);
 
     // --- UI helpers ---
     const $ = (id) => document.getElementById(id);
@@ -100,12 +97,10 @@
     const setText = (id, text) => $(id).textContent = text ?? "";
 
     // --- ActionCodeSettings for Email Link ---
-    // Use your production URL. Keep same-origin so the link opens back in your app.
     const actionCodeSettings = {
       url: `${window.location.origin}${window.location.pathname}`, // return here
       handleCodeInApp: true,
-      // If you have a custom Auth domain (recommended), it will be used automatically.
-      // dynamicLinkDomain: "yourcustom.page.link" // optional if you’ve set one in Firebase Auth
+      // dynamicLinkDomain: "yourcustom.page.link" // optional if configured
     };
 
     // --- Send magic link ---
@@ -117,7 +112,6 @@
       try {
         await setPersistence(auth, browserLocalPersistence);
         await sendSignInLinkToEmail(auth, email, actionCodeSettings);
-        // Save email locally so we can auto-complete on same device
         window.localStorage.setItem("emailForSignIn", email);
         setText("sendStatus", "Link sent! Check your email.");
       } catch (err) {
