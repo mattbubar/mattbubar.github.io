@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>Card Grading Calculator + Firebase (Email Link + Edit/Delete)</title>
+  <title>Card Grading Calculator + Firebase (Updated Color Palettes)</title>
   <style>
     /* Base (mobile-first) */
     :root{
+      /* default neutral (dark) in case no theme is chosen */
       --bg:#0f172a;
       --card:#0b1220;
       --card2:#0a0f1e;
       --border:rgba(255,255,255,.08);
       --muted:#94a3b8;
       --text:#e5e7eb;
-      --blue:#2563eb;
       --btn:#2563eb;
       --btn2:#334155;
       --danger:#dc2626;
@@ -43,41 +43,34 @@
       margin-bottom:16px;
     }
 
-    /* Grid: single column on mobile, 3 cols ≥760px */
     .grid{display:grid;gap:10px}
     @media(min-width:760px){.grid{grid-template-columns:repeat(3,1fr)}}
 
-    /* Labels & Inputs */
     label{font-size:12px;color:var(--muted);margin-bottom:4px;display:block}
-    input{
+    input, select{
       width:100%; padding:12px 12px; border-radius:12px;
       border:1px solid var(--border); background:var(--card2); color:var(--text);
-      font-size:16px; /* ≥16px prevents iOS zoom on focus */
-      line-height:1.3;
+      font-size:16px; line-height:1.3;
     }
-    input:focus{outline:2px solid rgba(37,99,235,.5); outline-offset:1px}
+    input:focus, select:focus{outline:2px solid rgba(37,99,235,.5); outline-offset:1px}
 
-    /* Buttons */
     button{
       padding:12px 14px; border:0; border-radius:12px; background:var(--btn); color:#fff;
       font-weight:600; cursor:pointer; font-size:16px; line-height:1.3;
-      min-height:44px; /* finger-friendly */
+      min-height:44px;
     }
     button:disabled{opacity:.6; cursor:not-allowed}
     .btns{display:flex; gap:10px; flex-wrap:wrap; margin-top:8px}
     .btn-secondary{background:var(--btn2)}
     .btn-danger{background:var(--danger)}
-    /* On mobile, make action buttons fill width nicely */
     @media(max-width:759px){
       .btns button{flex:1 1 48%}
     }
 
-    /* Utility rows */
     .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
     .muted{color:var(--muted); font-size:12px}
     .hidden{display:none}
 
-    /* Stats & pills */
     .stat{
       display:flex; justify-content:space-between; gap:8px;
       padding:12px; border:1px solid var(--border); border-radius:12px; background:var(--card2);
@@ -87,114 +80,104 @@
     .good{background:var(--good-bg); color:var(--good-tx); border:1px solid var(--good-bd)}
     .bad{background:var(--bad-bg); color:#fecaca; border:1px solid var(--bad-bd)}
 
-    /* Table (scrollable on small screens) */
     .table-wrap{overflow:auto; -webkit-overflow-scrolling:touch; border-radius:10px}
-    table{width:100%; border-collapse:collapse; min-width:640px}
+    table{width:100%; border-collapse:collapse; min-width:760px}
     th,td{padding:10px; border-bottom:1px solid rgba(255,255,255,.06); text-align:left; font-size:14px; vertical-align:middle}
     th{color:var(--muted); font-weight:600; background:rgba(255,255,255,.02); position:sticky; top:0; backdrop-filter:saturate(1.2) blur(2px)}
     .actions{display:flex; gap:8px}
-    @media(max-width:759px){
-      .actions button{min-width:96px}
+
+    /* ===== NEW THEMES from attached palettes ===== */
+
+    /* Dentakay (greens): 235945 2F735A 13261F F1F2F0 0D0D0D */
+    body.theme-dentakay {
+      --bg:#13261F;
+      --card:#235945;
+      --card2:#2F735A;
+      --border:rgba(241,242,240,.12);
+      --muted:#F1F2F0;
+      --text:#F1F2F0;
+      --btn:#2F735A;
+      --btn2:#235945;
+      --danger:#F1F2F0;
+      --good-bg:rgba(47,115,90,.25);
+      --good-bd:rgba(47,115,90,.5);
+      --good-tx:#F1F2F0;
+      --bad-bg:rgba(13,13,13,.25);
+      --bad-bd:rgba(13,13,13,.45);
     }
-	/* Default (your current navy/slate) stays in :root.
-	   Add these four themes — they override the same CSS variables. */
 
-	body.theme-flight {
-	  --bg:#0D0D0D;           /* dark base */
-	  --card:#161616;         /* panel */
-	  --card2:#111111;
-	  --border:rgba(255,255,255,.10);
-	  --muted:#D5D96A;        /* soft lime */
-	  --text:#F2F2F2;
+    /* Logofolio (blues): 5684BF 4478A6 435C73 364959 96B9D9 */
+    body.theme-logofolio {
+      --bg:#364959;
+      --card:#435C73;
+      --card2:#4478A6;
+      --border:rgba(150,185,217,.18);
+      --muted:#96B9D9;
+      --text:#E8F1FA;
+      --btn:#5684BF;
+      --btn2:#4478A6;
+      --danger:#8B2C2C;
+      --good-bg:rgba(86,132,191,.22);
+      --good-bd:rgba(86,132,191,.42);
+      --good-tx:#CFE1F4;
+      --bad-bg:rgba(139,44,44,.18);
+      --bad-bd:rgba(139,44,44,.38);
+    }
 
-	  --btn:#DBF227;          /* neon lime */
-	  --btn2:#D5D96A;         /* desat lime */
-	  --danger:#D91A1A;       /* red */
+    /* Forest (moody): 232625 35403A 4C594F A4A69C BFBFB8 */
+    body.theme-forest {
+      --bg:#232625;
+      --card:#35403A;
+      --card2:#4C594F;
+      --border:rgba(191,191,184,.16);
+      --muted:#BFBFB8;
+      --text:#EDEDEA;
+      --btn:#A4A69C;
+      --btn2:#4C594F;
+      --danger:#C94040;
+      --good-bg:rgba(164,166,156,.20);
+      --good-bd:rgba(164,166,156,.40);
+      --good-tx:#222;
+      --bad-bg:rgba(201,64,64,.18);
+      --bad-bd:rgba(201,64,64,.36);
+    }
 
-	  --good-bg:rgba(219,242,39,.15);
-	  --good-bd:rgba(219,242,39,.35);
-	  --good-tx:#DBF227;
-	  --bad-bg:rgba(217,26,26,.18);
-	  --bad-bd:rgba(217,26,26,.38);
-	  --bad-tx:#F2F2F2;
-	}
-	body.theme-forward {
-	  --bg:#435773;           /* deep slate-blue */
-	  --card:#394a62;
-	  --card2:#2f3d52;
-	  --border:rgba(255,255,255,.10);
-	  --muted:#F2F2F2;
-	  --text:#F2F2F2;
-
-	  --btn:#D9A714;          /* mustard */
-	  --btn2:#F2B035;         /* light amber */
-	  --danger:#8C6826;       /* earthy warning */
-
-	  --good-bg:rgba(242,176,53,.18);
-	  --good-bd:rgba(242,176,53,.40);
-	  --good-tx:#F2B035;
-	  --bad-bg:rgba(140,104,38,.22);
-	  --bad-bd:rgba(140,104,38,.42);
-	  --bad-tx:#F2F2F2;
-	}
-	body.theme-handyman {
-	  --bg:#F2EBC4;           /* pale cream */
-	  --card:#FFFFFF;         /* keep panels bright */
-	  --card2:#FFF9E6;
-	  --border:rgba(13,13,13,.10);
-	  --muted:#0D0D0D;
-	  --text:#0D0D0D;
-
-	  --btn:#F2CB05;          /* rich yellow */
-	  --btn2:#A68C0A;         /* olive */
-	  --danger:#0D0D0D;       /* high-contrast dark */
-
-	  --good-bg:rgba(242,203,5,.15);
-	  --good-bd:rgba(242,203,5,.35);
-	  --good-tx:#8A7104;
-	  --bad-bg:rgba(13,13,13,.08);
-	  --bad-bd:rgba(13,13,13,.25);
-	  --bad-tx:#0D0D0D;
-	}
-	body.theme-solenest {
-	  --bg:#F2E8D5;           /* warm sand */
-	  --card:#FFFFFF;
-	  --card2:#FFF3DF;
-	  --border:rgba(64,42,30,.15);
-	  --muted:#402A1E;
-	  --text:#402A1E;
-
-	  --btn:#F2AB27;          /* solar orange */
-	  --btn2:#D99D55;         /* tan */
-	  --danger:#402A1E;       /* deep cocoa */
-
-	  --good-bg:rgba(242,171,39,.18);
-	  --good-bd:rgba(242,171,39,.40);
-	  --good-tx:#A86F14;
-	  --bad-bg:rgba(64,42,30,.10);
-	  --bad-bd:rgba(64,42,30,.28);
-	  --bad-tx:#402A1E;
-	}
-	
+    /* Nissan (icy light): AED8F2 C4E5F2 F2F2F2 404040 0D0D0D */
+    body.theme-nissan {
+      --bg:#F2F2F2;
+      --card:#C4E5F2;
+      --card2:#AED8F2;
+      --border:rgba(13,13,13,.12);
+      --muted:#404040;
+      --text:#0D0D0D;
+      --btn:#404040;
+      --btn2:#0D0D0D;
+      --danger:#9A1B1B;
+      --good-bg:rgba(64,64,64,.08);
+      --good-bd:rgba(64,64,64,.28);
+      --good-tx:#0D0D0D;
+      --bad-bg:rgba(154,27,27,.10);
+      --bad-bd:rgba(154,27,27,.30);
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h2>Card Grading Profit & EV Calculator (Email Link + Firebase Edit/Delete)</h2>
-<div class="card" style="display:flex;align-items:center;gap:10px;justify-content:space-between;">
-  <div class="muted">Theme</div>
-  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-    <button id="themePrev" class="btn-secondary" type="button">◀</button>
-    <select id="themeSelect" style="min-width:170px;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--card2);color:var(--text)">
-	  <!-- add options -->
-	  <option value="flight">Flight (Lime/Red)</option>
-	  <option value="forward">Forward (Navy/Mustard)</option>
-	  <option value="handyman">Handyman (Sunny)</option>
-	  <option value="solenest">Solenest (Solar)</option>
-    </select>
-    <button id="themeNext" class="btn-secondary" type="button">▶</button>
-  </div>
-</div>
+    <h2>Card Grading Profit & EV Calculator (New Palettes)</h2>
+
+    <div class="card" style="display:flex;align-items:center;gap:10px;justify-content:space-between;">
+      <div class="muted">Theme</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button id="themePrev" class="btn-secondary" type="button">◀</button>
+        <select id="themeSelect" style="min-width:220px">
+          <option value="dentakay">Dentakay (Greens)</option>
+          <option value="logofolio">Logofolio 2025 (Blues)</option>
+          <option value="forest">Moody Forest</option>
+          <option value="nissan">NISSAN Leaflet (Icy)</option>
+        </select>
+        <button id="themeNext" class="btn-secondary" type="button">▶</button>
+      </div>
+    </div>
 
     <!-- ===== Sign-in (Email Link) ===== -->
     <div class="card" id="signinCard">
@@ -244,6 +227,18 @@
           <div><label>PSA 10 Price ($)</label><input id="psa10Price" type="number" inputmode="decimal" value="100"/></div>
           <div><label>eBay Fee (%)</label><input id="ebayFee" type="number" inputmode="decimal" value="12.5"/></div>
           <div><label>Gem Rate (%)</label><input id="gemRate" type="number" inputmode="decimal" value="60"/></div>
+          <div>
+            <label>Sport</label>
+            <select id="sport">
+              <option value="">— Select —</option>
+              <option value="football">Football</option>
+              <option value="basketball">Basketball</option>
+              <option value="baseball">Baseball</option>
+              <option value="hockey">Hockey</option>
+              <option value="tennis">Tennis</option>
+              <option value="non-sport">Non-Sport</option>
+            </select>
+          </div>
         </div>
 
         <div class="btns">
@@ -266,43 +261,85 @@
         </div>
       </div>
 
-      <!-- Live list (per-user) -->
+      <!-- Controls for filtering & sorting & search -->
+      <div class="card">
+        <div class="row" style="gap:16px;">
+          <div style="min-width:160px;flex:1 1 220px">
+            <label>Filter by Sport</label>
+            <select id="filterSport">
+              <option value="all">All</option>
+              <option value="football">Football</option>
+              <option value="basketball">Basketball</option>
+              <option value="baseball">Baseball</option>
+              <option value="hockey">Hockey</option>
+              <option value="tennis">Tennis</option>
+              <option value="non-sport">Non-Sport</option>
+              <option value="none">No sport set</option>
+            </select>
+          </div>
+          <div style="min-width:200px;flex:1 1 260px">
+            <label>Sort</label>
+            <select id="sortMode">
+              <option value="created_desc">Created (newest → oldest)</option>
+              <option value="created_asc">Created (oldest → newest)</option>
+              <option value="year_asc">Year ↑</option>
+              <option value="year_desc">Year ↓</option>
+              <option value="name_asc">Name A → Z</option>
+              <option value="name_desc">Name Z → A</option>
+            </select>
+          </div>
+          <div style="min-width:220px;flex:2 1 340px">
+            <label>Search by Card Name</label>
+            <input id="searchName" type="text" placeholder="Type to filter by name… (e.g., Jordan, 1991, SkyBox)"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live list -->
       <div class="card">
         <h3 style="margin:4px 0 8px">Saved Cards (Live)</h3>
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>Card</th><th>Raw</th><th>9</th><th>10</th><th>Gem%</th><th>EV</th><th>Decision</th><th>Actions</th>
+                <th>Card</th>
+                <th>Year</th>
+                <th>Sport</th>
+                <th>Raw</th>
+                <th>9</th>
+                <th>10</th>
+                <th>Gem%</th>
+                <th>EV</th>
+                <th>Decision</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody id="cardsTbody"></tbody>
           </table>
         </div>
-        <div class="muted" style="margin-top:6px">Data is stored under your account at <code>users/{uid}/cards</code>.</div>
+        <div class="muted" style="margin-top:6px">
+          Data is stored under your account at <code>users/{uid}/cards</code>.
+          <br/>Tip: Year is parsed from the beginning of Card Name.
+        </div>
       </div>
     </div>
   </div>
 
   <!-- Firebase (module style) -->
   <script type="module">
-    // Core Firebase
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 
-    // Auth (Email Link)
     import {
       initializeAuth, onAuthStateChanged, signOut, setPersistence,
       browserLocalPersistence, browserPopupRedirectResolver,
       isSignInWithEmailLink, sendSignInLinkToEmail, signInWithEmailLink
     } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
-    // Firestore
     import {
       getFirestore, collection, addDoc, serverTimestamp, onSnapshot,
       query, orderBy, doc, deleteDoc, updateDoc, getDoc
     } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-    // ==== Your Firebase config (project: grading-calculator-ce36f) ====
     const firebaseConfig = {
       apiKey: "AIzaSyBvUBx-QTjTyzv8oWxoCX4rweq72yChS3M",
       authDomain: "grading-calculator-ce36f.firebaseapp.com",
@@ -311,83 +348,65 @@
       appId: "1:406763572625:web:026a965c194d9a3c8cde30"
     };
 
-    // Init
     const app = initializeApp(firebaseConfig);
     const auth = initializeAuth(app, {
       persistence: browserLocalPersistence,
       popupRedirectResolver: browserPopupRedirectResolver
     });
     const db = getFirestore(app);
-	
-	// ===== THEME SWITCHER =====
-	const THEMES = [
-	  "default", "emerald", "retro", "mint", "neon",
-	  "flight", "forward", "handyman", "solenest"
-	];
 
-	function applyTheme(key) {
-	  // Remove any previous theme-* class
-	  document.body.classList.remove(
-	    "theme-emerald","theme-retro","theme-mint","theme-neon",
-	    "theme-flight","theme-forward","theme-handyman","theme-solenest"
-	  );
+    // ===== THEME SWITCHER (new palettes) =====
+    const THEMES = ["dentakay","logofolio","forest","nissan"];
 
-	  // Map key to CSS class
-	  const cls = ({
-	    emerald:  "theme-emerald",
-	    retro:    "theme-retro",
-	    mint:     "theme-mint",
-	    neon:     "theme-neon",
-	    flight:   "theme-flight",
-	    forward:  "theme-forward",
-	    handyman: "theme-handyman",
-	    solenest: "theme-solenest",
-	    default:  ""   // no class → default :root
-	  })[key] || "";
-
-	  if (cls) document.body.classList.add(cls);
-
-	  // Persist + reflect selection
-	  localStorage.setItem("gc_theme", key);
-	  const sel = document.getElementById("themeSelect");
-	  if (sel) sel.value = key;
-	}
-	
-
-	function cycleTheme(dir = 1) {
-	  const cur = localStorage.getItem("gc_theme") || "default";
-	  const idx = THEMES.indexOf(cur);
-	  const next = THEMES[(idx + dir + THEMES.length) % THEMES.length];
-	  applyTheme(next);
-	}
-
-	// Init on load
-	(function initTheme(){
-	  const saved = localStorage.getItem("gc_theme") || "default";
-	  applyTheme(saved);
-	  const sel = document.getElementById("themeSelect");
-	  const prevBtn = document.getElementById("themePrev");
-	  const nextBtn = document.getElementById("themeNext");
-	  if (sel) sel.addEventListener("change", (e)=>applyTheme(e.target.value));
-	  if (prevBtn) prevBtn.addEventListener("click", ()=>cycleTheme(-1));
-	  if (nextBtn) nextBtn.addEventListener("click", ()=>cycleTheme(+1));
-	})();
-	
+    function applyTheme(key) {
+      document.body.className = document.body.className
+        .replace(/\btheme-\w+\b/g, '').trim();
+      const cls = ({
+        dentakay:"theme-dentakay",
+        logofolio:"theme-logofolio",
+        forest:"theme-forest",
+        nissan:"theme-nissan"
+      })[key] || "";
+      if (cls) document.body.classList.add(cls);
+      localStorage.setItem("gc_theme", key);
+      const sel = document.getElementById("themeSelect");
+      if (sel) sel.value = key;
+    }
+    function cycleTheme(dir=1){
+      const cur = localStorage.getItem("gc_theme") || "dentakay";
+      const idx = THEMES.indexOf(cur);
+      const next = THEMES[(idx + dir + THEMES.length) % THEMES.length];
+      applyTheme(next);
+    }
+    (function initTheme(){
+      const saved = localStorage.getItem("gc_theme") || "dentakay";
+      applyTheme(saved);
+      const sel = document.getElementById("themeSelect");
+      const prevBtn = document.getElementById("themePrev");
+      const nextBtn = document.getElementById("themeNext");
+      if (sel) sel.addEventListener("change", (e)=>applyTheme(e.target.value));
+      if (prevBtn) prevBtn.addEventListener("click", ()=>cycleTheme(-1));
+      if (nextBtn) nextBtn.addEventListener("click", ()=>cycleTheme(+1));
+    })();
 
     // ===== Helpers =====
     const $ = (id) => document.getElementById(id);
     const money = (v) => "$" + (Number(v)||0).toFixed(2);
     const pill = (el, ok) => { el.className = "pill " + (ok ? "good" : "bad"); el.textContent = ok ? "PROFIT" : "LOSS"; };
     const show = (id, yes=true) => $(id).classList.toggle("hidden", !yes);
-    let editingId = null; // doc id being edited
-    let userCardsRef = null; // per-user collection ref
+    let editingId = null;
+    let userCardsRef = null;
     let unsubList = null;
+    let cacheDocs = []; // cache for filter/sort
+
+    function getYearFromName(name){
+      if (!name) return null;
+      const m = String(name).trim().match(/^(\d{4})/);
+      return m ? parseInt(m[1],10) : null;
+    }
 
     // ===== Email Link Auth =====
-    const actionCodeSettings = {
-      url: `${window.location.origin}${window.location.pathname}`,
-      handleCodeInApp: true
-    };
+    const actionCodeSettings = { url: `${window.location.origin}${window.location.pathname}`, handleCodeInApp: true };
 
     $("sendLink").addEventListener("click", async () => {
       const email = $("email").value.trim();
@@ -418,7 +437,8 @@
       }
     }
 
-    if (isSignInWithEmailLink(auth, window.location.href)) {
+    import { isSignInWithEmailLink as _isSignInWithEmailLink } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+    if (_isSignInWithEmailLink(auth, window.location.href)) {
       show("step-complete", true);
       const email = localStorage.getItem("emailForSignIn");
       if (email) {
@@ -442,12 +462,20 @@
 
         userCardsRef = collection(db, `users/${user.uid}/cards`);
         if (unsubList) unsubList();
-        unsubList = onSnapshot(query(userCardsRef, orderBy("createdAt","desc")), renderList);
+        unsubList = onSnapshot(query(userCardsRef, orderBy("createdAt","desc")), (snap)=>{
+          cacheDocs = [];
+          snap.forEach(d => {
+            const data = d.data();
+            cacheDocs.push({ id: d.id, ...data, __createdAt: data.createdAt?.toMillis?.() || 0 });
+          });
+          renderFilteredSorted();
+        });
       } else {
         show("authed", false);
         show("app", false);
         show("signinCard", true);
         if (unsubList) { unsubList(); unsubList = null; }
+        cacheDocs = [];
         $("cardsTbody").innerHTML = "";
       }
     });
@@ -474,14 +502,14 @@
       const pass = gem >= 0.60 && ev >= 0;
 
       $("results").style.display = "block";
-      $("r_cost").textContent = money(cost);
-      $("r_net9").textContent = money(net9);
-      $("r_net10").textContent = money(net10);
+      $("r_cost").textContent = "$" + cost.toFixed(2);
+      $("r_net9").textContent = "$" + net9.toFixed(2);
+      $("r_net10").textContent = "$" + net10.toFixed(2);
       pill($("r_pill9"), profit9 >= 0);
       pill($("r_pill10"), profit10 >= 0);
-      $("r_p9").innerHTML = (profit9>=0?'<span class="pill good">+</span> ':'<span class="pill bad">−</span> ')+ money(Math.abs(profit9));
-      $("r_p10").innerHTML = (profit10>=0?'<span class="pill good">+</span> ':'<span class="pill bad">−</span> ')+ money(Math.abs(profit10));
-      $("r_ev").innerHTML = (ev>=0?'<span class="pill good">+</span> ':'<span class="pill bad">−</span> ')+ money(Math.abs(ev));
+      $("r_p9").innerHTML = (profit9>=0?'<span class="pill good">+</span> ':'<span class="pill bad">−</span> ')+ "$" + Math.abs(profit9).toFixed(2);
+      $("r_p10").innerHTML = (profit10>=0?'<span class="pill good">+</span> ':'<span class="pill bad">−</span> ')+ "$" + Math.abs(profit10).toFixed(2);
+      $("r_ev").innerHTML = (ev>=0?'<span class="pill good">+</span> ':'<span class="pill bad">−</span> ')+ "$" + Math.abs(ev).toFixed(2);
       $("r_decision").className = "pill " + (pass ? "good" : "bad");
       $("r_decision").textContent = pass ? "YES (Grade)" : "NO (Skip)";
 
@@ -500,10 +528,12 @@
       if (!u) { alert("Sign in first."); return; }
       const name = $("cardName").value.trim();
       if (!name) { alert("Please enter a Card Name."); return; }
+      const sport = $("sport").value || "";
       const r = calc();
       try {
         await addDoc(userCardsRef, {
           name,
+          sport,
           raw: r.raw, gradingFee: r.grade, psa9: r.p9, psa10: r.p10,
           ebayFeePct: r.feePct, gemRatePct: r.gemPct,
           cost: r.cost, net9: r.net9, net10: r.net10,
@@ -528,9 +558,11 @@
       if (!u || !editingId) return;
       const r = calc();
       const name = $("cardName").value.trim();
+      const sport = $("sport").value || "";
       try {
         await updateDoc(doc(db, `users/${u.uid}/cards/${editingId}`), {
           name,
+          sport,
           raw: r.raw, gradingFee: r.grade, psa9: r.p9, psa10: r.p10,
           ebayFeePct: r.feePct, gemRatePct: r.gemPct,
           cost: r.cost, net9: r.net9, net10: r.net10,
@@ -549,6 +581,7 @@
     function enterEdit(docId, data) {
       editingId = docId;
       $("cardName").value = data.name || "";
+      $("sport").value = data.sport || "";
       $("rawPrice").value = data.raw ?? "";
       $("gradingFee").value = data.gradingFee ?? "";
       $("psa9Price").value = data.psa9 ?? "";
@@ -569,25 +602,73 @@
       $("cancelEditBtn").style.display = "none";
     }
 
-    // ===== Live list (per-user) =====
+    // ===== Live list (per-user) with filter/sort/search =====
     const tbody = $("cardsTbody");
+    const filterSportSel = $("filterSport");
+    const sortModeSel = $("sortMode");
+    const searchName = $("searchName");
+    filterSportSel.addEventListener("change", renderFilteredSorted);
+    sortModeSel.addEventListener("change", renderFilteredSorted);
+    searchName.addEventListener("input", renderFilteredSorted);
 
-    function renderList(snap) {
+    function sportLabel(v){
+      if (!v) return "—";
+      const map = {
+        "football":"Football","basketball":"Basketball","baseball":"Baseball",
+        "hockey":"Hockey","tennis":"Tennis","non-sport":"Non-Sport"
+      };
+      return map[v] || v;
+    }
+
+    function renderFilteredSorted(){
+      let rows = cacheDocs.slice();
+      const f = filterSportSel.value;
+      if (f && f !== "all"){
+        if (f === "none"){
+          rows = rows.filter(x => !x.sport);
+        } else {
+          rows = rows.filter(x => (x.sport||"") === f);
+        }
+      }
+      // Search by name
+      const q = searchName.value.trim().toLowerCase();
+      if (q) rows = rows.filter(x => String(x.name||"").toLowerCase().includes(q));
+
+      // Sort
+      const mode = sortModeSel.value;
+      rows.sort((a,b)=>{
+        if (mode === "created_desc") return (b.__createdAt - a.__createdAt);
+        if (mode === "created_asc")  return (a.__createdAt - b.__createdAt);
+        if (mode === "name_asc")     return String(a.name||"").localeCompare(String(b.name||""));
+        if (mode === "name_desc")    return String(b.name||"").localeCompare(String(a.name||""));
+        if (mode === "year_asc" || mode === "year_desc"){
+          const ya = getYearFromName(a.name);
+          const yb = getYearFromName(b.name);
+          const ca = (ya ?? -Infinity);
+          const cb = (yb ?? -Infinity);
+          return mode === "year_asc" ? (ca - cb) : (cb - ca);
+        }
+        return 0;
+      });
+
+      // Render
       tbody.innerHTML = "";
-      snap.forEach(docSnap => {
-        const c = docSnap.data();
+      rows.forEach(c => {
         const tr = document.createElement("tr");
+        const year = getYearFromName(c.name);
         tr.innerHTML = `
           <td>${c.name || ""}</td>
-          <td>${money(c.raw)}</td>
-          <td>${money(c.psa9)}</td>
-          <td>${money(c.psa10)}</td>
+          <td>${year ?? "—"}</td>
+          <td>${sportLabel(c.sport)}</td>
+          <td>$${(Number(c.raw)||0).toFixed(2)}</td>
+          <td>$${(Number(c.psa9)||0).toFixed(2)}</td>
+          <td>$${(Number(c.psa10)||0).toFixed(2)}</td>
           <td>${Math.round((c.gemRatePct||0)*100)}%</td>
-          <td>${money(c.ev || 0)}</td>
+          <td>$${(Number(c.ev)||0).toFixed(2)}</td>
           <td><span class="pill ${c.decision==='YES'?'good':'bad'}">${c.decision||'NO'}</span></td>
           <td class="actions">
-            <button class="btn-secondary" data-action="edit" data-id="${docSnap.id}">Edit</button>
-            <button class="btn-danger" data-action="delete" data-id="${docSnap.id}">Delete</button>
+            <button class="btn-secondary" data-action="edit" data-id="${c.id}">Edit</button>
+            <button class="btn-danger" data-action="delete" data-id="${c.id}">Delete</button>
           </td>
         `;
         tbody.appendChild(tr);
