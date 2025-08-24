@@ -320,26 +320,39 @@
     const db = getFirestore(app);
 	
 	// ===== THEME SWITCHER =====
-	// extend lists
-	const THEMES = ["default","emerald","retro","mint","neon","flight","forward","handyman","solenest"];
+	const THEMES = [
+	  "default", "emerald", "retro", "mint", "neon",
+	  "flight", "forward", "handyman", "solenest"
+	];
 
-	document.body.classList.remove(
-	  "theme-emerald","theme-retro","theme-mint","theme-neon",
-	  "theme-flight","theme-forward","theme-handyman","theme-solenest"
-	);
+	function applyTheme(key) {
+	  // Remove any previous theme-* class
+	  document.body.classList.remove(
+	    "theme-emerald","theme-retro","theme-mint","theme-neon",
+	    "theme-flight","theme-forward","theme-handyman","theme-solenest"
+	  );
 
-	const clsMap = {
-	  emerald:"theme-emerald", retro:"theme-retro", mint:"theme-mint", neon:"theme-neon",
-	  flight:"theme-flight", forward:"theme-forward", handyman:"theme-handyman", solenest:"theme-solenest",
-	  default:""
-	};
-	
+	  // Map key to CSS class
+	  const cls = ({
+	    emerald:  "theme-emerald",
+	    retro:    "theme-retro",
+	    mint:     "theme-mint",
+	    neon:     "theme-neon",
+	    flight:   "theme-flight",
+	    forward:  "theme-forward",
+	    handyman: "theme-handyman",
+	    solenest: "theme-solenest",
+	    default:  ""   // no class → default :root
+	  })[key] || "";
+
 	  if (cls) document.body.classList.add(cls);
+
 	  // Persist + reflect selection
 	  localStorage.setItem("gc_theme", key);
 	  const sel = document.getElementById("themeSelect");
 	  if (sel) sel.value = key;
 	}
+	
 
 	function cycleTheme(dir = 1) {
 	  const cur = localStorage.getItem("gc_theme") || "default";
