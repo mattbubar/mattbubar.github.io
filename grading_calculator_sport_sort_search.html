@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>Card Grading Calculator + Firebase (Sport Filter + Sorting + Search)</title>
+  <style>
+    :root{
+      --bg:#0f172a;
+      --card:#0b1220;
+      --card2:#0a0f1e;
+      --border:rgba(255,255,255,.08);
+      --muted:#94a3b8;
+      --text:#e5e7eb;
+      --blue:#2563eb;
+      --btn:#2563eb;
+      --btn2:#334155;
+      --danger:#dc2626;
+      --good-bg:rgba(22,163,74,.15);
+      --good-bd:rgba(22,163,74,.3);
+      --good-tx:#86efac;
+      --bad-bg:rgba(220,38,38,.15);
+      --bad-bd:rgba(220,38,38,.3);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+      background:var(--bg); color:var(--text); margin:0;
+      padding:16px; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .wrap{max-width:980px;margin:0 auto}
+    h2{margin:0 0 12px; font-size:22px; line-height:1.2}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px}
+    .grid{display:grid;gap:10px}
+    @media(min-width:760px){.grid{grid-template-columns:repeat(3,1fr)}}
+    label{font-size:12px;color:var(--muted);margin-bottom:4px;display:block}
+    input, select{
+      width:100%; padding:12px 12px; border-radius:12px;
+      border:1px solid var(--border); background:var(--card2); color:var(--text);
+      font-size:16px; line-height:1.3;
+    }
+    input:focus, select:focus{outline:2px solid rgba(37,99,235,.5); outline-offset:1px}
+    button{
+      padding:12px 14px; border:0; border-radius:12px; background:var(--btn); color:#fff;
+      font-weight:600; cursor:pointer; font-size:16px; line-height:1.3; min-height:44px;
+    }
+    button:disabled{opacity:.6; cursor:not-allowed}
+    .btns{display:flex; gap:10px; flex-wrap:wrap; margin-top:8px}
+    .btn-secondary{background:var(--btn2)}
+    .btn-danger{background:var(--danger)}
+    .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+    .muted{color:var(--muted); font-size:12px}
+    .hidden{display:none}
+    .stat{display:flex; justify-content:space-between; gap:8px; padding:12px; border:1px solid var(--border); border-radius:12px; background:var(--card2); margin-top:8px; font-size:14px}
+    .pill{padding:3px 10px; border-radius:999px; font-size:12px; font-weight:700; vertical-align:middle}
+    .good{background:var(--good-bg); color:var(--good-tx); border:1px solid var(--good-bd)}
+    .bad{background:var(--bad-bg); color:#fecaca; border:1px solid var(--bad-bd)}
+    .table-wrap{overflow:auto; -webkit-overflow-scrolling:touch; border-radius:10px}
+    table{width:100%; border-collapse:collapse; min-width:760px}
+    th,td{padding:10px; border-bottom:1px solid rgba(255,255,255,.06); text-align:left; font-size:14px; vertical-align:middle}
+    th{color:var(--muted); font-weight:600; background:rgba(255,255,255,.02); position:sticky; top:0; backdrop-filter:saturate(1.2) blur(2px)}
+    .actions{display:flex; gap:8px}
+    /* Themes from prior file (shortened for brevity) */
+    body.theme-flight { --bg:#0D0D0D; --card:#161616; --card2:#111111; --border:rgba(255,255,255,.10); --muted:#D5D96A; --text:#F2F2F2; --btn:#DBF227; --btn2:#D5D96A; --danger:#D91A1A; --good-bg:rgba(219,242,39,.15); --good-bd:rgba(219,242,39,.35); --good-tx:#DBF227; --bad-bg:rgba(217,26,26,.18); --bad-bd:rgba(217,26,26,.38) }
+    body.theme-forward { --bg:#435773; --card:#394a62; --card2:#2f3d52; --border:rgba(255,255,255,.10); --muted:#F2F2F2; --text:#F2F2F2; --btn:#D9A714; --btn2:#F2B035; --danger:#8C6826; --good-bg:rgba(242,176,53,.18); --good-bd:rgba(242,176,53,.40); --good-tx:#F2B035; --bad-bg:rgba(140,104,38,.22); --bad-bd:rgba(140,104,38,.42) }
+    body.theme-handyman { --bg:#F2EBC4; --card:#FFFFFF; --card2:#FFF9E6; --border:rgba(13,13,13,.10); --muted:#0D0D0D; --text:#0D0D0D; --btn:#F2CB05; --btn2:#A68C0A; --danger:#0D0D0D; --good-bg:rgba(242,203,5,.15); --good-bd:rgba(242,203,5,.35); --good-tx:#8A7104; --bad-bg:rgba(13,13,13,.08); --bad-bd:rgba(13,13,13,.25) }
+    body.theme-solenest { --bg:#F2E8D5; --card:#FFFFFF; --card2:#FFF3DF; --border:rgba(64,42,30,.15); --muted:#402A1E; --text:#402A1E; --btn:#F2AB27; --btn2:#D99D55; --danger:#402A1E; --good-bg:rgba(242,171,39,.18); --good-bd:rgba(242,171,39,.40); --good-tx:#A86F14; --bad-bg:rgba(64,42,30,.10); --bad-bd:rgba(64,42,30,.28) }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h2>Card Grading Profit & EV Calculator (Sport Filter + Sorting + Search)</h2>
+
+    <div class="card" style="display:flex;align-items:center;gap:10px;justify-content:space-between;">
+      <div class="muted">Theme</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button id="themePrev" class="btn-secondary" type="button">◀</button>
+        <select id="themeSelect" style="min-width:170px">
+          <option value="flight">Flight (Lime/Red)</option>
+          <option value="forward">Forward (Navy/Mustard)</option>
+          <option value="handyman">Handyman (Sunny)</option>
+          <option value="solenest">Solenest (Solar)</option>
+        </select>
+        <button id="themeNext" class="btn-secondary" type="button">▶</button>
+      </div>
+    </div>
+
+    <!-- Sign-in -->
+    <div class="card" id="signinCard">
+      <div class="row" style="justify-content:space-between; align-items:flex-end">
+        <div style="flex:1 1 260px; min-width:240px">
+          <label>Email (passwordless)</label>
+          <input id="email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com"/>
+        </div>
+        <div class="row" style="flex:1 1 180px; min-width:180px">
+          <button id="sendLink" style="width:100%">Send magic link</button>
+        </div>
+      </div>
+      <div class="row" style="margin-top:8px"><span id="sendStatus" class="muted"></span></div>
+      <div id="step-complete" class="hidden" style="margin-top:8px">
+        <div id="needEmail" class="hidden">
+          <label>Confirm your email</label>
+          <input id="confirmEmail" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com"/>
+          <div class="row" style="margin-top:8px">
+            <button id="finishWithEmail" style="flex:1">Finish sign-in</button>
+            <span id="finishStatus" class="muted"></span>
+          </div>
+        </div>
+      </div>
+      <div id="authed" class="hidden" style="margin-top:8px">
+        <div class="row" style="justify-content:space-between;">
+          <div>Signed in as <strong id="who"></strong></div>
+          <div class="row"><button id="signOut" class="btn-secondary">Sign out</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- App -->
+    <div id="app" class="hidden">
+      <!-- Calculator -->
+      <div class="card">
+        <div class="grid">
+          <div><label>Card Name</label><input id="cardName" placeholder="e.g., 1991 SkyBox #546 MJ"/></div>
+          <div><label>Raw Price ($)</label><input id="rawPrice" type="number" inputmode="decimal" value="20"/></div>
+          <div><label>Grading Fee ($)</label><input id="gradingFee" type="number" inputmode="decimal" value="21"/></div>
+          <div><label>PSA 9 Price ($)</label><input id="psa9Price" type="number" inputmode="decimal" value="25"/></div>
+          <div><label>PSA 10 Price ($)</label><input id="psa10Price" type="number" inputmode="decimal" value="100"/></div>
+          <div><label>eBay Fee (%)</label><input id="ebayFee" type="number" inputmode="decimal" value="12.5"/></div>
+          <div><label>Gem Rate (%)</label><input id="gemRate" type="number" inputmode="decimal" value="60"/></div>
+          <div>
+            <label>Sport</label>
+            <select id="sport">
+              <option value="">— Select —</option>
+              <option value="football">Football</option>
+              <option value="basketball">Basketball</option>
+              <option value="baseball">Baseball</option>
+              <option value="hockey">Hockey</option>
+              <option value="tennis">Tennis</option>
+              <option value="non-sport">Non-Sport</option>
+            </select>
+          </div>
+        </div>
+        <div class="btns">
+          <button id="calcBtn">Calculate</button>
+          <button id="saveBtn">Save Card to Firebase</button>
+          <button id="updateBtn" class="btn-secondary" style="display:none">Update Card</button>
+          <button id="cancelEditBtn" class="btn-secondary" style="display:none">Cancel Edit</button>
+          <span id="calcStatus" class="muted" style="min-height:20px"></span>
+        </div>
+        <div id="results" style="margin-top:8px;display:none">
+          <div class="stat"><span>Total Cost (Raw + Grading)</span><b id="r_cost"></b></div>
+          <div class="stat"><span>PSA 9 Net (after fees)</span><span><b id="r_net9"></b> <span id="r_pill9" class="pill"></span></span></div>
+          <div class="stat"><span>PSA 10 Net (after fees)</span><span><b id="r_net10"></b> <span id="r_pill10" class="pill"></span></span></div>
+          <div class="stat"><span>PSA 9 Profit/Loss</span><span id="r_p9"></span></div>
+          <div class="stat"><span>PSA 10 Profit/Loss</span><span id="r_p10"></span></div>
+          <div class="stat"><span>Expected Profit (Gem% × P10 + (1−Gem%) × P9)</span><span id="r_ev"></span></div>
+          <div class="stat"><span>Decision</span><b id="r_decision" class="pill"></b></div>
+          <div class="muted">Decision rule: <b>YES</b> if Gem Rate ≥ 60% and EV ≥ $0.</div>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="card">
+        <div class="row" style="gap:16px;">
+          <div style="min-width:160px;flex:1 1 220px">
+            <label>Filter by Sport</label>
+            <select id="filterSport">
+              <option value="all">All</option>
+              <option value="football">Football</option>
+              <option value="basketball">Basketball</option>
+              <option value="baseball">Baseball</option>
+              <option value="hockey">Hockey</option>
+              <option value="tennis">Tennis</option>
+              <option value="non-sport">Non-Sport</option>
+              <option value="none">No sport set</option>
+            </select>
+          </div>
+          <div style="min-width:200px;flex:1 1 260px">
+            <label>Sort</label>
+            <select id="sortMode">
+              <option value="created_desc">Created (newest → oldest)</option>
+              <option value="created_asc">Created (oldest → newest)</option>
+              <option value="year_asc">Year ↑</option>
+              <option value="year_desc">Year ↓</option>
+              <option value="name_asc">Name A → Z</option>
+              <option value="name_desc">Name Z → A</option>
+            </select>
+          </div>
+          <div style="min-width:220px;flex:2 1 340px">
+            <label>Search by Card Name</label>
+            <input id="searchName" type="text" placeholder="Type to filter by name… (e.g., Jordan, 1991, SkyBox)"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- List -->
+      <div class="card">
+        <h3 style="margin:4px 0 8px">Saved Cards (Live)</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Card</th>
+                <th>Year</th>
+                <th>Sport</th>
+                <th>Raw</th>
+                <th>9</th>
+                <th>10</th>
+                <th>Gem%</th>
+                <th>EV</th>
+                <th>Decision</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="cardsTbody"></tbody>
+          </table>
+        </div>
+        <div class="muted" style="margin-top:6px">
+          Data is stored under your account at <code>users/{uid}/cards</code>.
+          <br/>Tip: Year is parsed from the beginning of Card Name.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import {
+      initializeAuth, onAuthStateChanged, signOut, setPersistence,
+      browserLocalPersistence, browserPopupRedirectResolver,
+      isSignInWithEmailLink, sendSignInLinkToEmail, signInWithEmailLink
+    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+    import {
+      getFirestore, collection, addDoc, serverTimestamp, onSnapshot,
+      query, orderBy, doc, deleteDoc, updateDoc, getDoc
+    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBvUBx-QTjTyzv8oWxoCX4rweq72yChS3M",
+      authDomain: "grading-calculator-ce36f.firebaseapp.com",
+      projectId: "grading-calculator-ce36f",
+      messagingSenderId: "406763572625",
+      appId: "1:406763572625:web:026a965c194d9a3c8cde30"
+    };
+    const app = initializeApp(firebaseConfig);
+    const auth = initializeAuth(app, { persistence: browserLocalPersistence, popupRedirectResolver: browserPopupRedirectResolver });
+    const db = getFirestore(app);
+
+    // THEME
+    const THEMES = ["default","emerald","retro","mint","neon","flight","forward","handyman","solenest"];
+    function applyTheme(key){
+      document.body.classList.remove("theme-emerald","theme-retro","theme-mint","theme-neon","theme-flight","theme-forward","theme-handyman","theme-solenest");
+      const cls = ({emerald:"theme-emerald",retro:"theme-retro",mint:"theme-mint",neon:"theme-neon",flight:"theme-flight",forward:"theme-forward",handyman:"theme-handyman",solenest:"theme-solenest",default:""})[key] || "";
+      if (cls) document.body.classList.add(cls);
+      localStorage.setItem("gc_theme", key);
+      const sel = document.getElementById("themeSelect"); if (sel) sel.value = key;
+    }
+    function cycleTheme(dir=1){ const cur = localStorage.getItem("gc_theme") || "default"; const idx = THEMES.indexOf(cur); const next = THEMES[(idx+dir+THEMES.length)%THEMES.length]; applyTheme(next); }
+    (function initTheme(){ const saved = localStorage.getItem("gc_theme") || "default"; applyTheme(saved);
+      document.getElementById("themeSelect").addEventListener("change", e=>applyTheme(e.target.value));
+      document.getElementById("themePrev").addEventListener("click", ()=>cycleTheme(-1));
+      document.getElementById("themeNext").addEventListener("click", ()=>cycleTheme(+1));
+    })();
+
+    // Helpers
+    const $ = (id)=>document.getElementById(id);
+    const money = (v)=>"$"+(Number(v)||0).toFixed(2);
+    const pill = (el, ok)=>{ el.className="pill "+(ok?"good":"bad"); el.textContent= ok? "PROFIT":"LOSS"; };
+    const show = (id, yes=true)=> $(id).classList.toggle("hidden", !yes);
+    let editingId = null, userCardsRef = null, unsubList = null, cacheDocs = [];
+    const getYearFromName = (name)=>{ if(!name) return null; const m=String(name).trim().match(/^(\d{4})/); return m?parseInt(m[1],10):null; };
+
+    // Auth (email link)
+    const actionCodeSettings = { url: `${window.location.origin}${window.location.pathname}`, handleCodeInApp: true };
+    $("sendLink").addEventListener("click", async ()=>{
+      const email = $("email").value.trim(); $("sendStatus").textContent="";
+      if(!email){ $("sendStatus").textContent="Enter a valid email."; return; }
+      try{
+        await setPersistence(auth, browserLocalPersistence);
+        await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+        localStorage.setItem("emailForSignIn", email);
+        $("sendStatus").textContent="Link sent! Check your email.";
+      }catch(err){ console.error(err); $("sendStatus").textContent = err.message || "Could not send link."; }
+    });
+    async function finishSignIn(email){
+      $("finishStatus").textContent="Signing you in…";
+      try{
+        await setPersistence(auth, browserLocalPersistence);
+        await signInWithEmailLink(auth, email, window.location.href);
+        localStorage.removeItem("emailForSignIn");
+        $("finishStatus").textContent=""; history.replaceState({}, document.title, window.location.pathname);
+      }catch(err){ console.error(err); $("finishStatus").textContent = err.message || "Could not complete sign-in."; }
+    }
+    import { isSignInWithEmailLink as _isSignInWithEmailLink } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+    if (_isSignInWithEmailLink(auth, window.location.href)){
+      show("step-complete", true);
+      const email = localStorage.getItem("emailForSignIn");
+      if (email){ await finishSignIn(email); }
+      else{
+        show("needEmail", true);
+        $("finishWithEmail").addEventListener("click", async ()=>{
+          const em = $("confirmEmail").value.trim();
+          if(!em){ $("finishStatus").textContent="Enter your email."; return; }
+          await finishSignIn(em);
+        });
+      }
+    }
+    onAuthStateChanged(auth, (user)=>{
+      if(user){
+        show("authed", true); show("signinCard", true); show("app", true);
+        $("who").textContent = user.email || user.uid;
+        userCardsRef = collection(db, `users/${user.uid}/cards`);
+        if (unsubList) unsubList();
+        unsubList = onSnapshot(query(userCardsRef, orderBy("createdAt","desc")), (snap)=>{
+          cacheDocs = []; snap.forEach(d=>{ const data=d.data(); cacheDocs.push({id:d.id, ...data, __createdAt:data.createdAt?.toMillis?.()||0}); });
+          renderFilteredSorted();
+        });
+      }else{
+        show("authed", false); show("app", false); show("signinCard", true);
+        if (unsubList){ unsubList(); unsubList=null; }
+        cacheDocs=[]; $("cardsTbody").innerHTML="";
+      }
+    });
+    $("signOut").addEventListener("click", async ()=>{ try{ await signOut(auth); }catch(e){ console.error(e); } });
+
+    // Calculator
+    function calc(){
+      const raw = parseFloat($("rawPrice").value)||0;
+      const grade = parseFloat($("gradingFee").value)||0;
+      const p9 = parseFloat($("psa9Price").value)||0;
+      const p10 = parseFloat($("psa10Price").value)||0;
+      const fee = (parseFloat($("ebayFee").value)||0)/100;
+      const gem = (parseFloat($("gemRate").value)||0)/100;
+      const cost = raw + grade, net9 = p9*(1-fee), net10 = p10*(1-fee);
+      const profit9 = net9 - cost, profit10 = net10 - cost;
+      const ev = gem*profit10 + (1-gem)*profit9;
+      const pass = gem >= 0.60 && ev >= 0;
+      $("results").style.display="block";
+      $("r_cost").textContent=money(cost);
+      $("r_net9").textContent=money(net9);
+      $("r_net10").textContent=money(net10);
+      pill($("r_pill9"), profit9>=0);
+      pill($("r_pill10"), profit10>=0);
+      $("r_p9").innerHTML=(profit9>=0?'<span class="pill good">+</span> ':'<span class="pill bad">−</span> ')+money(Math.abs(profit9));
+      $("r_p10").innerHTML=(profit10>=0?'<span class="pill good">+</span> ':'<span class="pill bad">−</span> ')+money(Math.abs(profit10));
+      $("r_ev").innerHTML=(ev>=0?'<span class="pill good">+</span> ':'<span class="pill bad">−</span> ')+money(Math.abs(ev));
+      $("r_decision").className="pill "+(pass?"good":"bad");
+      $("r_decision").textContent=pass?"YES (Grade)":"NO (Skip)";
+      return { raw, grade, p9, p10, feePct:fee, gemPct:gem, cost, net9, net10, profit9, profit10, ev, pass };
+    }
+    $("calcBtn").addEventListener("click", ()=>{ calc(); $("calcStatus").textContent="Calculated."; setTimeout(()=>$("calcStatus").textContent="",1200); });
+
+    // Save/Update
+    $("saveBtn").addEventListener("click", async ()=>{
+      const u = auth.currentUser; if(!u){ alert("Sign in first."); return; }
+      const name = $("cardName").value.trim(); if(!name){ alert("Please enter a Card Name."); return; }
+      const sport = $("sport").value || "";
+      const r = calc();
+      try{
+        await addDoc(userCardsRef, { name, sport, raw:r.raw, gradingFee:r.grade, psa9:r.p9, psa10:r.p10,
+          ebayFeePct:r.feePct, gemRatePct:r.gemPct, cost:r.cost, net9:r.net9, net10:r.net10, profit9:r.profit9, profit10:r.profit10,
+          ev:r.ev, decision:r.pass ? "YES":"NO", createdAt: serverTimestamp() });
+        $("calcStatus").textContent="Saved ✅"; setTimeout(()=>$("calcStatus").textContent="",1200); clearEditing();
+      }catch(e){ console.error(e); alert(e.message||"Save failed."); }
+    });
+    $("updateBtn").addEventListener("click", updateExisting);
+    $("cancelEditBtn").addEventListener("click", clearEditing);
+    async function updateExisting(){
+      const u = auth.currentUser; if(!u || !editingId) return;
+      const r = calc(); const name = $("cardName").value.trim(); const sport = $("sport").value || "";
+      try{
+        await updateDoc(doc(db, `users/${u.uid}/cards/${editingId}`), {
+          name, sport, raw:r.raw, gradingFee:r.grade, psa9:r.p9, psa10:r.p10, ebayFeePct:r.feePct, gemRatePct:r.gemPct,
+          cost:r.cost, net9:r.net9, net10:r.net10, profit9:r.profit9, profit10:r.profit10, ev:r.ev, decision:r.pass?"YES":"NO"
+        });
+        $("calcStatus").textContent="Updated ✅"; setTimeout(()=>$("calcStatus").textContent="",1200); clearEditing();
+      }catch(e){ console.error(e); alert(e.message||"Update failed."); }
+    }
+    function enterEdit(docId, data){
+      editingId = docId;
+      $("cardName").value = data.name || "";
+      $("sport").value = data.sport || "";
+      $("rawPrice").value = data.raw ?? "";
+      $("gradingFee").value = data.gradingFee ?? "";
+      $("psa9Price").value = data.psa9 ?? "";
+      $("psa10Price").value = data.psa10 ?? "";
+      $("ebayFee").value = data.ebayFeePct ? (data.ebayFeePct*100).toFixed(2) : "12.5";
+      $("gemRate").value = data.gemRatePct ? (data.gemRatePct*100).toFixed(0) : "60";
+      calc();
+      $("saveBtn").style.display="inline-block";
+      $("updateBtn").style.display="inline-block";
+      $("cancelEditBtn").style.display="inline-block";
+    }
+    function clearEditing(){
+      editingId = null;
+      $("saveBtn").style.display="inline-block";
+      $("updateBtn").style.display="none";
+      $("cancelEditBtn").style.display="none";
+    }
+
+    // List + Filters + Search
+    const tbody = $("cardsTbody");
+    const filterSportSel = $("filterSport");
+    const sortModeSel = $("sortMode");
+    const searchName = $("searchName");
+    filterSportSel.addEventListener("change", renderFilteredSorted);
+    sortModeSel.addEventListener("change", renderFilteredSorted);
+    searchName.addEventListener("input", renderFilteredSorted);
+
+    const sportLabel = (v)=>{ if(!v) return "—"; const map={football:"Football",basketball:"Basketball",baseball:"Baseball",hockey:"Hockey",tennis:"Tennis","non-sport":"Non-Sport"}; return map[v]||v; };
+
+    function renderFilteredSorted(){
+      let rows = cacheDocs.slice();
+      // Filter by sport
+      const f = filterSportSel.value;
+      if (f && f !== "all"){
+        if (f === "none") rows = rows.filter(x => !x.sport);
+        else rows = rows.filter(x => (x.sport||"") === f);
+      }
+      // Text search (name only, case-insensitive)
+      const q = searchName.value.trim().toLowerCase();
+      if (q) rows = rows.filter(x => String(x.name||"").toLowerCase().includes(q));
+
+      // Sort
+      const mode = sortModeSel.value;
+      rows.sort((a,b)=>{
+        if (mode === "created_desc") return (b.__createdAt - a.__createdAt);
+        if (mode === "created_asc")  return (a.__createdAt - b.__createdAt);
+        if (mode === "name_asc")     return String(a.name||"").localeCompare(String(b.name||""));
+        if (mode === "name_desc")    return String(b.name||"").localeCompare(String(a.name||""));
+        if (mode === "year_asc" || mode === "year_desc"){
+          const ya = getYearFromName(a.name), yb = getYearFromName(b.name);
+          const ca = (ya ?? -Infinity), cb = (yb ?? -Infinity);
+          return mode === "year_asc" ? (ca - cb) : (cb - ca);
+        }
+        return 0;
+      });
+
+      // Render
+      tbody.innerHTML = "";
+      rows.forEach(c=>{
+        const tr = document.createElement("tr");
+        const year = getYearFromName(c.name);
+        tr.innerHTML = `
+          <td>${c.name || ""}</td>
+          <td>${year ?? "—"}</td>
+          <td>${sportLabel(c.sport)}</td>
+          <td>${money(c.raw)}</td>
+          <td>${money(c.psa9)}</td>
+          <td>${money(c.psa10)}</td>
+          <td>${Math.round((c.gemRatePct||0)*100)}%</td>
+          <td>${money(c.ev || 0)}</td>
+          <td><span class="pill ${c.decision==='YES'?'good':'bad'}">${c.decision||'NO'}</span></td>
+          <td class="actions">
+            <button class="btn-secondary" data-action="edit" data-id="${c.id}">Edit</button>
+            <button class="btn-danger" data-action="delete" data-id="${c.id}">Delete</button>
+          </td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    tbody.addEventListener("click", async (e)=>{
+      const btn = e.target.closest("button"); if(!btn) return;
+      const id = btn.getAttribute("data-id"); const action = btn.getAttribute("data-action");
+      const u = auth.currentUser; if(!u) return;
+      if (action === "delete"){
+        if (confirm("Delete this card?")){ try{ await deleteDoc(doc(db, `users/${u.uid}/cards/${id}`)); }catch(err){ console.error(err); alert(err.message||"Delete failed."); } }
+      } else if (action === "edit"){
+        try{ const snap = await getDoc(doc(db, `users/${u.uid}/cards/${id}`)); if (snap.exists()) enterEdit(id, snap.data()); }
+        catch(err){ console.error(err); alert(err.message||"Could not load document for edit."); }
+      }
+    });
+
+    // initial
+    window.addEventListener("DOMContentLoaded", calc);
+  </script>
+</body>
+</html>
