@@ -99,33 +99,83 @@
 	/* Default (your current navy/slate) stays in :root.
 	   Add these four themes — they override the same CSS variables. */
 
-	body.theme-emerald {
-	  --bg:#0f172a; --card:#0a1f1c; --card2:#0a0f1e; --border:rgba(255,255,255,.08);
-	  --muted:#94a3b8; --text:#f1f5f9; --btn:#10b981; --btn2:#374151; --danger:#dc2626;
-	  --good-bg:rgba(22,163,74,.15); --good-bd:rgba(22,163,74,.3); --good-tx:#86efac;
-	  --bad-bg:rgba(220,38,38,.15); --bad-bd:rgba(220,38,38,.3); --bad-tx:#fecaca;
-	}
+	body.theme-flight {
+	  --bg:#0D0D0D;           /* dark base */
+	  --card:#161616;         /* panel */
+	  --card2:#111111;
+	  --border:rgba(255,255,255,.10);
+	  --muted:#D5D96A;        /* soft lime */
+	  --text:#F2F2F2;
 
-	body.theme-retro {
-	  --bg:#1c1917; --card:#292524; --card2:#1f1b19; --border:rgba(255,255,255,.08);
-	  --muted:#d6d3d1; --text:#f5f5f4; --btn:#f59e0b; --btn2:#6b7280; --danger:#ef4444;
-	  --good-bg:rgba(234,179,8,.15); --good-bd:rgba(234,179,8,.3); --good-tx:#fde68a;
-	  --bad-bg:rgba(220,38,38,.15); --bad-bd:rgba(220,38,38,.3); --bad-tx:#fecaca;
-	}
+	  --btn:#DBF227;          /* neon lime */
+	  --btn2:#D5D96A;         /* desat lime */
+	  --danger:#D91A1A;       /* red */
 
-	body.theme-mint {
-	  --bg:#ecfeff; --card:#ffffff; --card2:#f8fafc; --border:#e2e8f0;
-	  --muted:#64748b; --text:#0f172a; --btn:#0ea5e9; --btn2:#e2e8f0; --danger:#ef4444;
-	  --good-bg:rgba(14,165,233,.1); --good-bd:rgba(14,165,233,.3); --good-tx:#0ea5e9;
-	  --bad-bg:rgba(220,38,38,.1); --bad-bd:rgba(220,38,38,.3); --bad-tx:#b91c1c;
+	  --good-bg:rgba(219,242,39,.15);
+	  --good-bd:rgba(219,242,39,.35);
+	  --good-tx:#DBF227;
+	  --bad-bg:rgba(217,26,26,.18);
+	  --bad-bd:rgba(217,26,26,.38);
+	  --bad-tx:#F2F2F2;
 	}
+	body.theme-forward {
+	  --bg:#435773;           /* deep slate-blue */
+	  --card:#394a62;
+	  --card2:#2f3d52;
+	  --border:rgba(255,255,255,.10);
+	  --muted:#F2F2F2;
+	  --text:#F2F2F2;
 
-	body.theme-neon {
-	  --bg:#0f0f1a; --card:#1a1a2e; --card2:#111122; --border:rgba(255,255,255,.08);
-	  --muted:#94a3b8; --text:#f9fafb; --btn:#e11d48; --btn2:#22d3ee; --danger:#facc15;
-	  --good-bg:rgba(34,211,238,.15); --good-bd:rgba(34,211,238,.3); --good-tx:#22d3ee;
-	  --bad-bg:rgba(225,29,72,.15); --bad-bd:rgba(225,29,72,.3); --bad-tx:#fda4af;
+	  --btn:#D9A714;          /* mustard */
+	  --btn2:#F2B035;         /* light amber */
+	  --danger:#8C6826;       /* earthy warning */
+
+	  --good-bg:rgba(242,176,53,.18);
+	  --good-bd:rgba(242,176,53,.40);
+	  --good-tx:#F2B035;
+	  --bad-bg:rgba(140,104,38,.22);
+	  --bad-bd:rgba(140,104,38,.42);
+	  --bad-tx:#F2F2F2;
 	}
+	body.theme-handyman {
+	  --bg:#F2EBC4;           /* pale cream */
+	  --card:#FFFFFF;         /* keep panels bright */
+	  --card2:#FFF9E6;
+	  --border:rgba(13,13,13,.10);
+	  --muted:#0D0D0D;
+	  --text:#0D0D0D;
+
+	  --btn:#F2CB05;          /* rich yellow */
+	  --btn2:#A68C0A;         /* olive */
+	  --danger:#0D0D0D;       /* high-contrast dark */
+
+	  --good-bg:rgba(242,203,5,.15);
+	  --good-bd:rgba(242,203,5,.35);
+	  --good-tx:#8A7104;
+	  --bad-bg:rgba(13,13,13,.08);
+	  --bad-bd:rgba(13,13,13,.25);
+	  --bad-tx:#0D0D0D;
+	}
+	body.theme-solenest {
+	  --bg:#F2E8D5;           /* warm sand */
+	  --card:#FFFFFF;
+	  --card2:#FFF3DF;
+	  --border:rgba(64,42,30,.15);
+	  --muted:#402A1E;
+	  --text:#402A1E;
+
+	  --btn:#F2AB27;          /* solar orange */
+	  --btn2:#D99D55;         /* tan */
+	  --danger:#402A1E;       /* deep cocoa */
+
+	  --good-bg:rgba(242,171,39,.18);
+	  --good-bd:rgba(242,171,39,.40);
+	  --good-tx:#A86F14;
+	  --bad-bg:rgba(64,42,30,.10);
+	  --bad-bd:rgba(64,42,30,.28);
+	  --bad-tx:#402A1E;
+	}
+	
   </style>
 </head>
 <body>
@@ -136,11 +186,11 @@
   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
     <button id="themePrev" class="btn-secondary" type="button">◀</button>
     <select id="themeSelect" style="min-width:170px;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--card2);color:var(--text)">
-      <option value="default">Default (Navy)</option>
-      <option value="emerald">Emerald & Slate</option>
-      <option value="retro">Retro Cardboard</option>
-      <option value="mint">Mint Ice</option>
-      <option value="neon">Neon Night</option>
+	  <!-- add options -->
+	  <option value="flight">Flight (Lime/Red)</option>
+	  <option value="forward">Forward (Navy/Mustard)</option>
+	  <option value="handyman">Handyman (Sunny)</option>
+	  <option value="solenest">Solenest (Solar)</option>
     </select>
     <button id="themeNext" class="btn-secondary" type="button">▶</button>
   </div>
@@ -270,19 +320,20 @@
     const db = getFirestore(app);
 	
 	// ===== THEME SWITCHER =====
-	const THEMES = ["default", "emerald", "retro", "mint", "neon"];
+	// extend lists
+	const THEMES = ["default","emerald","retro","mint","neon","flight","forward","handyman","solenest"];
 
-	function applyTheme(key) {
-	  // Remove any previous theme-* class
-	  document.body.classList.remove("theme-emerald","theme-retro","theme-mint","theme-neon");
-	  // Map key to class
-	  const cls = ({
-	    emerald: "theme-emerald",
-	    retro:   "theme-retro",
-	    mint:    "theme-mint",
-	    neon:    "theme-neon",
-	    default: ""            // no class -> default :root
-	  })[key] || "";
+	document.body.classList.remove(
+	  "theme-emerald","theme-retro","theme-mint","theme-neon",
+	  "theme-flight","theme-forward","theme-handyman","theme-solenest"
+	);
+
+	const clsMap = {
+	  emerald:"theme-emerald", retro:"theme-retro", mint:"theme-mint", neon:"theme-neon",
+	  flight:"theme-flight", forward:"theme-forward", handyman:"theme-handyman", solenest:"theme-solenest",
+	  default:""
+	};
+	
 	  if (cls) document.body.classList.add(cls);
 	  // Persist + reflect selection
 	  localStorage.setItem("gc_theme", key);
