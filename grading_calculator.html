@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>Card Grading Calculator + Firebase (Fixed, Compact)</title>
+  <title>Card Grading Calculator + Firebase (Hotfix: Edit/Delete)</title>
   <style>
     :root{
       --bg:#0f172a; --card:#0b1220; --card2:#0a0f1e; --border:rgba(255,255,255,.08);
@@ -11,7 +11,6 @@
       --good-bg:rgba(22,163,74,.15); --good-bd:rgba(22,163,74,.3); --good-tx:#86efac;
       --bad-bg:rgba(220,38,38,.15); --bad-bd:rgba(220,38,38,.3);
     }
-    /* Palettes from your images */
     body.theme-dentakay { --bg:#13261F; --card:#235945; --card2:#2F735A; --border:rgba(241,242,240,.12); --muted:#F1F2F0; --text:#F1F2F0; --btn:#2F735A; --btn2:#235945; --danger:#F1F2F0; --good-bg:rgba(47,115,90,.25); --good-bd:rgba(47,115,90,.5); --good-tx:#F1F2F0; --bad-bg:rgba(13,13,13,.25); --bad-bd:rgba(13,13,13,.45) }
     body.theme-logofolio { --bg:#364959; --card:#435C73; --card2:#4478A6; --border:rgba(150,185,217,.18); --muted:#96B9D9; --text:#E8F1FA; --btn:#5684BF; --btn2:#4478A6; --danger:#8B2C2C; --good-bg:rgba(86,132,191,.22); --good-bd:rgba(86,132,191,.42); --good-tx:#CFE1F4; --bad-bg:rgba(139,44,44,.18); --bad-bd:rgba(139,44,44,.38) }
     body.theme-forest { --bg:#232625; --card:#35403A; --card2:#4C594F; --border:rgba(191,191,184,.16); --muted:#BFBFB8; --text:#EDEDEA; --btn:#A4A69C; --btn2:#4C594F; --danger:#C94040; --good-bg:rgba(164,166,156,.20); --good-bd:rgba(164,166,156,.40); --good-tx:#222; --bad-bg:rgba(201,64,64,.18); --bad-bd:rgba(201,64,64,.36) }
@@ -33,7 +32,6 @@
     button:disabled{opacity:.6;cursor:not-allowed}
     .btn-secondary{background:var(--btn2)} .btn-danger{background:var(--danger)}
 
-    /* Compact top bar + mini auth */
     .compact *{font-size:13px}
     .compact select,.compact input{padding:8px 10px;border-radius:10px}
     .compact button{padding:8px 10px;border-radius:10px;min-height:0}
@@ -67,7 +65,6 @@
   <div class="wrap">
     <h2>Card Grading Profit & EV Calculator</h2>
 
-    <!-- Compact TOP BAR -->
     <div class="card compact">
       <div class="topbar">
         <div class="group">
@@ -81,22 +78,16 @@
           </select>
           <button id="themeNext" class="btn-secondary" type="button" title="Next">▶</button>
         </div>
-
-        <!-- Inline sign-in -->
         <div class="group email-wrap" id="signinInline">
           <input id="email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com"/>
           <button id="sendLink">Send link</button>
           <span id="sendStatus" class="muted"></span>
         </div>
-
-        <!-- Mini Auth (signed in) -->
         <div class="group mini-auth hidden" id="authed">
           <span class="email-chip" id="emailChip" title=""><span class="dot"></span><span id="whoShort"></span></span>
           <button id="signOut" class="btn-secondary" title="Sign out">↥</button>
         </div>
       </div>
-
-      <!-- Email link finish (if opened from email) -->
       <div id="step-complete" class="hidden" style="margin-top:6px">
         <div id="needEmail" class="hidden row">
           <input id="confirmEmail" type="email" inputmode="email" autocomplete="email" placeholder="confirm your email" style="width:220px"/>
@@ -106,7 +97,6 @@
       </div>
     </div>
 
-    <!-- App hidden until auth -->
     <div id="app" class="hidden">
       <div class="card">
         <div class="grid">
@@ -269,7 +259,6 @@
       }catch(err){ console.error(err); if (finishStatus) finishStatus.textContent = err.message || "Could not complete sign-in."; }
     }
 
-    // Avoid top-level await: wrap in async IIFE
     (async () => {
       if (isSignInWithEmailLink(auth, window.location.href)){
         show("step-complete", true);
@@ -414,6 +403,35 @@
         tbody.appendChild(tr);
       });
     }
+
+    // Attach handler for Edit/Delete (event delegation)
+    tbody.addEventListener("click", async (e) => {
+      const btn = e.target.closest("button");
+      if (!btn) return;
+      const id = btn.getAttribute("data-id");
+      const action = btn.getAttribute("data-action");
+      const u = auth.currentUser;
+      if (!u || !id || !action) return;
+
+      if (action === "delete") {
+        if (confirm("Delete this card?")) {
+          try {
+            await deleteDoc(doc(db, `users/${u.uid}/cards/${id}`));
+          } catch (err) {
+            console.error(err);
+            alert(err.message || "Delete failed.");
+          }
+        }
+      } else if (action === "edit") {
+        try {
+          const snap = await getDoc(doc(db, `users/${u.uid}/cards/${id}`));
+          if (snap.exists()) enterEdit(id, snap.data());
+        } catch (err) {
+          console.error(err);
+          alert(err.message || "Could not load document for edit.");
+        }
+      }
+    });
 
     window.addEventListener("DOMContentLoaded", ()=>{ applyTheme(localStorage.getItem("gc_theme")||"dentakay"); });
   </script>
