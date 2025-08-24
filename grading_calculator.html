@@ -3,221 +3,103 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>Card Grading Calculator + Firebase (Updated Color Palettes)</title>
+  <title>Card Grading Calculator + Firebase (Compact Top Bar + Mini Auth)</title>
   <style>
-    /* Base (mobile-first) */
     :root{
-      /* default neutral (dark) in case no theme is chosen */
-      --bg:#0f172a;
-      --card:#0b1220;
-      --card2:#0a0f1e;
-      --border:rgba(255,255,255,.08);
-      --muted:#94a3b8;
-      --text:#e5e7eb;
-      --btn:#2563eb;
-      --btn2:#334155;
-      --danger:#dc2626;
-      --good-bg:rgba(22,163,74,.15);
-      --good-bd:rgba(22,163,74,.3);
-      --good-tx:#86efac;
-      --bad-bg:rgba(220,38,38,.15);
-      --bad-bd:rgba(220,38,38,.3);
+      --bg:#0f172a; --card:#0b1220; --card2:#0a0f1e; --border:rgba(255,255,255,.08);
+      --muted:#94a3b8; --text:#e5e7eb; --btn:#2563eb; --btn2:#334155; --danger:#dc2626;
+      --good-bg:rgba(22,163,74,.15); --good-bd:rgba(22,163,74,.3); --good-tx:#86efac;
+      --bad-bg:rgba(220,38,38,.15); --bad-bd:rgba(220,38,38,.3);
     }
+    /* Palettes */
+    body.theme-dentakay { --bg:#13261F; --card:#235945; --card2:#2F735A; --border:rgba(241,242,240,.12); --muted:#F1F2F0; --text:#F1F2F0; --btn:#2F735A; --btn2:#235945; --danger:#F1F2F0; --good-bg:rgba(47,115,90,.25); --good-bd:rgba(47,115,90,.5); --good-tx:#F1F2F0; --bad-bg:rgba(13,13,13,.25); --bad-bd:rgba(13,13,13,.45) }
+    body.theme-logofolio { --bg:#364959; --card:#435C73; --card2:#4478A6; --border:rgba(150,185,217,.18); --muted:#96B9D9; --text:#E8F1FA; --btn:#5684BF; --btn2:#4478A6; --danger:#8B2C2C; --good-bg:rgba(86,132,191,.22); --good-bd:rgba(86,132,191,.42); --good-tx:#CFE1F4; --bad-bg:rgba(139,44,44,.18); --bad-bd:rgba(139,44,44,.38) }
+    body.theme-forest { --bg:#232625; --card:#35403A; --card2:#4C594F; --border:rgba(191,191,184,.16); --muted:#BFBFB8; --text:#EDEDEA; --btn:#A4A69C; --btn2:#4C594F; --danger:#C94040; --good-bg:rgba(164,166,156,.20); --good-bd:rgba(164,166,156,.40); --good-tx:#222; --bad-bg:rgba(201,64,64,.18); --bad-bd:rgba(201,64,64,.36) }
+    body.theme-nissan { --bg:#F2F2F2; --card:#C4E5F2; --card2:#AED8F2; --border:rgba(13,13,13,.12); --muted:#404040; --text:#0D0D0D; --btn:#404040; --btn2:#0D0D0D; --danger:#9A1B1B; --good-bg:rgba(64,64,64,.08); --good-bd:rgba(64,64,64,.28); --good-tx:#0D0D0D; --bad-bg:rgba(154,27,27,.10); --bad-bd:rgba(154,27,27,.30) }
 
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
-      background:var(--bg); color:var(--text); margin:0;
-      padding:16px; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
-      -webkit-tap-highlight-color: transparent;
-    }
+    *{box-sizing:border-box} html,body{height:100%}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:var(--bg);color:var(--text);margin:0;padding:16px;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
     .wrap{max-width:980px;margin:0 auto}
-    h2{margin:0 0 12px; font-size:22px; line-height:1.2}
-
-    .card{
-      background:var(--card);
-      border:1px solid var(--border);
-      border-radius:14px;
-      padding:16px;
-      margin-bottom:16px;
-    }
-
-    .grid{display:grid;gap:10px}
-    @media(min-width:760px){.grid{grid-template-columns:repeat(3,1fr)}}
-
-    label{font-size:12px;color:var(--muted);margin-bottom:4px;display:block}
-    input, select{
-      width:100%; padding:12px 12px; border-radius:12px;
-      border:1px solid var(--border); background:var(--card2); color:var(--text);
-      font-size:16px; line-height:1.3;
-    }
-    input:focus, select:focus{outline:2px solid rgba(37,99,235,.5); outline-offset:1px}
-
-    button{
-      padding:12px 14px; border:0; border-radius:12px; background:var(--btn); color:#fff;
-      font-weight:600; cursor:pointer; font-size:16px; line-height:1.3;
-      min-height:44px;
-    }
-    button:disabled{opacity:.6; cursor:not-allowed}
-    .btns{display:flex; gap:10px; flex-wrap:wrap; margin-top:8px}
-    .btn-secondary{background:var(--btn2)}
-    .btn-danger{background:var(--danger)}
-    @media(max-width:759px){
-      .btns button{flex:1 1 48%}
-    }
-
-    .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
-    .muted{color:var(--muted); font-size:12px}
+    h2{margin:0 0 12px;font-size:22px;line-height:1.2}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px;margin-bottom:12px}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .muted{color:var(--muted);font-size:12px}
     .hidden{display:none}
 
-    .stat{
-      display:flex; justify-content:space-between; gap:8px;
-      padding:12px; border:1px solid var(--border); border-radius:12px; background:var(--card2);
-      margin-top:8px; font-size:14px;
+    label{font-size:12px;color:var(--muted);margin-bottom:4px;display:block}
+    input,select{width:100%;padding:12px 12px;border-radius:12px;border:1px solid var(--border);background:var(--card2);color:var(--text);font-size:16px;line-height:1.3}
+    input:focus,select:focus{outline:2px solid rgba(37,99,235,.5);outline-offset:1px}
+
+    button{padding:12px 14px;border:0;border-radius:12px;background:var(--btn);color:#fff;font-weight:600;cursor:pointer;font-size:16px;line-height:1.3;min-height:44px}
+    button:disabled{opacity:.6;cursor:not-allowed}
+    .btn-secondary{background:var(--btn2)} .btn-danger{background:var(--danger)}
+
+    /* Compact */
+    .compact *{font-size:13px}
+    .compact select,.compact input{padding:8px 10px;border-radius:10px}
+    .compact button{padding:8px 10px;border-radius:10px;min-height:0}
+    .topbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:space-between}
+    .topbar .group{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .email-wrap input{width:220px}
+    @media(max-width:760px){.email-wrap input{width:180px}}
+
+    /* Mini-auth */
+    .mini-auth{display:flex;align-items:center;gap:8px}
+    .mini-auth .email-chip{
+      display:inline-flex;align-items:center;gap:6px;
+      background:var(--card2);border:1px solid var(--border);
+      border-radius:999px;padding:6px 10px;font-weight:600;white-space:nowrap;
+      max-width:220px;overflow:hidden;text-overflow:ellipsis;
     }
-    .pill{padding:3px 10px; border-radius:999px; font-size:12px; font-weight:700; vertical-align:middle}
-    .good{background:var(--good-bg); color:var(--good-tx); border:1px solid var(--good-bd)}
-    .bad{background:var(--bad-bg); color:#fecaca; border:1px solid var(--bad-bd)}
-
-    .table-wrap{overflow:auto; -webkit-overflow-scrolling:touch; border-radius:10px}
-    table{width:100%; border-collapse:collapse; min-width:760px}
-    th,td{padding:10px; border-bottom:1px solid rgba(255,255,255,.06); text-align:left; font-size:14px; vertical-align:middle}
-    th{color:var(--muted); font-weight:600; background:rgba(255,255,255,.02); position:sticky; top:0; backdrop-filter:saturate(1.2) blur(2px)}
-    .actions{display:flex; gap:8px}
-
-    /* ===== NEW THEMES from attached palettes ===== */
-
-    /* Dentakay (greens): 235945 2F735A 13261F F1F2F0 0D0D0D */
-    body.theme-dentakay {
-      --bg:#13261F;
-      --card:#235945;
-      --card2:#2F735A;
-      --border:rgba(241,242,240,.12);
-      --muted:#F1F2F0;
-      --text:#F1F2F0;
-      --btn:#2F735A;
-      --btn2:#235945;
-      --danger:#F1F2F0;
-      --good-bg:rgba(47,115,90,.25);
-      --good-bd:rgba(47,115,90,.5);
-      --good-tx:#F1F2F0;
-      --bad-bg:rgba(13,13,13,.25);
-      --bad-bd:rgba(13,13,13,.45);
-    }
-
-    /* Logofolio (blues): 5684BF 4478A6 435C73 364959 96B9D9 */
-    body.theme-logofolio {
-      --bg:#364959;
-      --card:#435C73;
-      --card2:#4478A6;
-      --border:rgba(150,185,217,.18);
-      --muted:#96B9D9;
-      --text:#E8F1FA;
-      --btn:#5684BF;
-      --btn2:#4478A6;
-      --danger:#8B2C2C;
-      --good-bg:rgba(86,132,191,.22);
-      --good-bd:rgba(86,132,191,.42);
-      --good-tx:#CFE1F4;
-      --bad-bg:rgba(139,44,44,.18);
-      --bad-bd:rgba(139,44,44,.38);
-    }
-
-    /* Forest (moody): 232625 35403A 4C594F A4A69C BFBFB8 */
-    body.theme-forest {
-      --bg:#232625;
-      --card:#35403A;
-      --card2:#4C594F;
-      --border:rgba(191,191,184,.16);
-      --muted:#BFBFB8;
-      --text:#EDEDEA;
-      --btn:#A4A69C;
-      --btn2:#4C594F;
-      --danger:#C94040;
-      --good-bg:rgba(164,166,156,.20);
-      --good-bd:rgba(164,166,156,.40);
-      --good-tx:#222;
-      --bad-bg:rgba(201,64,64,.18);
-      --bad-bd:rgba(201,64,64,.36);
-    }
-
-    /* Nissan (icy light): AED8F2 C4E5F2 F2F2F2 404040 0D0D0D */
-    body.theme-nissan {
-      --bg:#F2F2F2;
-      --card:#C4E5F2;
-      --card2:#AED8F2;
-      --border:rgba(13,13,13,.12);
-      --muted:#404040;
-      --text:#0D0D0D;
-      --btn:#404040;
-      --btn2:#0D0D0D;
-      --danger:#9A1B1B;
-      --good-bg:rgba(64,64,64,.08);
-      --good-bd:rgba(64,64,64,.28);
-      --good-tx:#0D0D0D;
-      --bad-bg:rgba(154,27,27,.10);
-      --bad-bd:rgba(154,27,27,.30);
-    }
+    .mini-auth button{padding:6px 8px;border-radius:999px;min-height:0}
+    .mini-auth .dot{width:6px;height:6px;border-radius:999px;background:var(--btn)}
   </style>
 </head>
-<body>
+<body class="theme-dentakay">
   <div class="wrap">
-    <h2>Card Grading Profit & EV Calculator (New Palettes)</h2>
+    <h2>Card Grading Profit & EV Calculator</h2>
 
-    <div class="card" style="display:flex;align-items:center;gap:10px;justify-content:space-between;">
-      <div class="muted">Theme</div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <button id="themePrev" class="btn-secondary" type="button">◀</button>
-        <select id="themeSelect" style="min-width:220px">
-          <option value="dentakay">Dentakay (Greens)</option>
-          <option value="logofolio">Logofolio 2025 (Blues)</option>
-          <option value="forest">Moody Forest</option>
-          <option value="nissan">NISSAN Leaflet (Icy)</option>
-        </select>
-        <button id="themeNext" class="btn-secondary" type="button">▶</button>
-      </div>
-    </div>
+    <!-- Compact TOP BAR -->
+    <div class="card compact">
+      <div class="topbar">
+        <div class="group">
+          <span class="muted">Theme</span>
+          <button id="themePrev" class="btn-secondary" type="button" title="Prev">◀</button>
+          <select id="themeSelect">
+            <option value="dentakay">Dentakay (Greens)</option>
+            <option value="logofolio">Logofolio 2025</option>
+            <option value="forest">Moody Forest</option>
+            <option value="nissan">NISSAN (Icy)</option>
+          </select>
+          <button id="themeNext" class="btn-secondary" type="button" title="Next">▶</button>
+        </div>
 
-    <!-- ===== Sign-in (Email Link) ===== -->
-    <div class="card" id="signinCard">
-      <div class="row" style="justify-content:space-between; align-items:flex-end">
-        <div style="flex:1 1 260px; min-width:240px">
-          <label>Email (passwordless)</label>
+        <!-- Inline sign-in -->
+        <div class="group email-wrap" id="signinInline">
           <input id="email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com"/>
+          <button id="sendLink">Send link</button>
+          <span id="sendStatus" class="muted"></span>
         </div>
-        <div class="row" style="flex:1 1 180px; min-width:180px">
-          <button id="sendLink" style="width:100%">Send magic link</button>
-        </div>
-      </div>
-      <div class="row" style="margin-top:8px">
-        <span id="sendStatus" class="muted"></span>
-      </div>
 
-      <div id="step-complete" class="hidden" style="margin-top:8px">
-        <div id="needEmail" class="hidden">
-          <label>Confirm your email</label>
-          <input id="confirmEmail" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com"/>
-          <div class="row" style="margin-top:8px">
-            <button id="finishWithEmail" style="flex:1">Finish sign-in</button>
-            <span id="finishStatus" class="muted"></span>
-          </div>
+        <!-- Mini Auth (signed in) -->
+        <div class="group mini-auth hidden" id="authed">
+          <span class="email-chip" id="emailChip" title=""><span class="dot"></span><span id="whoShort"></span></span>
+          <button id="signOut" class="btn-secondary" title="Sign out">↥</button>
         </div>
       </div>
 
-      <div id="authed" class="hidden" style="margin-top:8px">
-        <div class="row" style="justify-content:space-between;">
-          <div>Signed in as <strong id="who"></strong></div>
-          <div class="row">
-            <button id="signOut" class="btn-secondary">Sign out</button>
-          </div>
+      <!-- Email link finish (if opened from email) -->
+      <div id="step-complete" class="hidden" style="margin-top:6px">
+        <div id="needEmail" class="hidden row">
+          <input id="confirmEmail" type="email" inputmode="email" autocomplete="email" placeholder="confirm your email" style="width:220px"/>
+          <button id="finishWithEmail">Finish</button>
+          <span id="finishStatus" class="muted"></span>
         </div>
       </div>
     </div>
 
-    <!-- ===== Calculator (hidden until auth) ===== -->
+    <!-- App hidden until auth -->
     <div id="app" class="hidden">
-      <!-- Calculator -->
       <div class="card">
         <div class="grid">
           <div><label>Card Name</label><input id="cardName" placeholder="e.g., 1991 SkyBox #546 MJ"/></div>
@@ -240,7 +122,6 @@
             </select>
           </div>
         </div>
-
         <div class="btns">
           <button id="calcBtn">Calculate</button>
           <button id="saveBtn">Save Card to Firebase</button>
@@ -248,7 +129,6 @@
           <button id="cancelEditBtn" class="btn-secondary" style="display:none">Cancel Edit</button>
           <span id="calcStatus" class="muted" style="min-height:20px"></span>
         </div>
-
         <div id="results" style="margin-top:8px;display:none">
           <div class="stat"><span>Total Cost (Raw + Grading)</span><b id="r_cost"></b></div>
           <div class="stat"><span>PSA 9 Net (after fees)</span><span><b id="r_net9"></b> <span id="r_pill9" class="pill"></span></span></div>
@@ -261,7 +141,6 @@
         </div>
       </div>
 
-      <!-- Controls for filtering & sorting & search -->
       <div class="card">
         <div class="row" style="gap:16px;">
           <div style="min-width:160px;flex:1 1 220px">
@@ -295,50 +174,25 @@
         </div>
       </div>
 
-      <!-- Live list -->
       <div class="card">
         <h3 style="margin:4px 0 8px">Saved Cards (Live)</h3>
         <div class="table-wrap">
           <table>
-            <thead>
-              <tr>
-                <th>Card</th>
-                <th>Year</th>
-                <th>Sport</th>
-                <th>Raw</th>
-                <th>9</th>
-                <th>10</th>
-                <th>Gem%</th>
-                <th>EV</th>
-                <th>Decision</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
+            <thead><tr>
+              <th>Card</th><th>Year</th><th>Sport</th><th>Raw</th><th>9</th><th>10</th><th>Gem%</th><th>EV</th><th>Decision</th><th>Actions</th>
+            </tr></thead>
             <tbody id="cardsTbody"></tbody>
           </table>
         </div>
-        <div class="muted" style="margin-top:6px">
-          Data is stored under your account at <code>users/{uid}/cards</code>.
-          <br/>Tip: Year is parsed from the beginning of Card Name.
-        </div>
+        <div class="muted" style="margin-top:6px">Data is stored under your account at <code>users/{uid}/cards</code>.</div>
       </div>
     </div>
   </div>
 
-  <!-- Firebase (module style) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-
-    import {
-      initializeAuth, onAuthStateChanged, signOut, setPersistence,
-      browserLocalPersistence, browserPopupRedirectResolver,
-      isSignInWithEmailLink, sendSignInLinkToEmail, signInWithEmailLink
-    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-
-    import {
-      getFirestore, collection, addDoc, serverTimestamp, onSnapshot,
-      query, orderBy, doc, deleteDoc, updateDoc, getDoc
-    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+    import { initializeAuth, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence, browserPopupRedirectResolver, isSignInWithEmailLink, sendSignInLinkToEmail, signInWithEmailLink } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+    import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, doc, deleteDoc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBvUBx-QTjTyzv8oWxoCX4rweq72yChS3M",
@@ -347,360 +201,218 @@
       messagingSenderId: "406763572625",
       appId: "1:406763572625:web:026a965c194d9a3c8cde30"
     };
-
     const app = initializeApp(firebaseConfig);
-    const auth = initializeAuth(app, {
-      persistence: browserLocalPersistence,
-      popupRedirectResolver: browserPopupRedirectResolver
-    });
+    const auth = initializeAuth(app, { persistence: browserLocalPersistence, popupRedirectResolver: browserPopupRedirectResolver });
     const db = getFirestore(app);
 
-    // ===== THEME SWITCHER (new palettes) =====
+    // Theme switcher
     const THEMES = ["dentakay","logofolio","forest","nissan"];
-
-    function applyTheme(key) {
-      document.body.className = document.body.className
-        .replace(/\btheme-\w+\b/g, '').trim();
-      const cls = ({
-        dentakay:"theme-dentakay",
-        logofolio:"theme-logofolio",
-        forest:"theme-forest",
-        nissan:"theme-nissan"
-      })[key] || "";
+    function applyTheme(key){
+      document.body.className = document.body.className.replace(/\btheme-\w+\b/g,'').trim();
+      const cls = {dentakay:"theme-dentakay",logofolio:"theme-logofolio",forest:"theme-forest",nissan:"theme-nissan"}[key] || "";
       if (cls) document.body.classList.add(cls);
       localStorage.setItem("gc_theme", key);
-      const sel = document.getElementById("themeSelect");
-      if (sel) sel.value = key;
+      const sel = document.getElementById("themeSelect"); if (sel) sel.value = key;
     }
-    function cycleTheme(dir=1){
-      const cur = localStorage.getItem("gc_theme") || "dentakay";
-      const idx = THEMES.indexOf(cur);
-      const next = THEMES[(idx + dir + THEMES.length) % THEMES.length];
-      applyTheme(next);
-    }
-    (function initTheme(){
-      const saved = localStorage.getItem("gc_theme") || "dentakay";
-      applyTheme(saved);
-      const sel = document.getElementById("themeSelect");
-      const prevBtn = document.getElementById("themePrev");
-      const nextBtn = document.getElementById("themeNext");
-      if (sel) sel.addEventListener("change", (e)=>applyTheme(e.target.value));
-      if (prevBtn) prevBtn.addEventListener("click", ()=>cycleTheme(-1));
-      if (nextBtn) nextBtn.addEventListener("click", ()=>cycleTheme(+1));
+    function cycleTheme(dir=1){ const cur = localStorage.getItem("gc_theme") || "dentakay"; const idx = THEMES.indexOf(cur); const next = THEMES[(idx+dir+THEMES.length)%THEMES.length]; applyTheme(next); }
+    (function initTheme(){ const saved=localStorage.getItem("gc_theme")||"dentakay"; applyTheme(saved);
+      document.getElementById("themeSelect").addEventListener("change", e=>applyTheme(e.target.value));
+      document.getElementById("themePrev").addEventListener("click", ()=>cycleTheme(-1));
+      document.getElementById("themeNext").addEventListener("click", ()=>cycleTheme(+1));
     })();
 
-    // ===== Helpers =====
-    const $ = (id) => document.getElementById(id);
-    const money = (v) => "$" + (Number(v)||0).toFixed(2);
-    const pill = (el, ok) => { el.className = "pill " + (ok ? "good" : "bad"); el.textContent = ok ? "PROFIT" : "LOSS"; };
-    const show = (id, yes=true) => $(id).classList.toggle("hidden", !yes);
-    let editingId = null;
-    let userCardsRef = null;
-    let unsubList = null;
-    let cacheDocs = []; // cache for filter/sort
+    // Helpers
+    const $ = id => document.getElementById(id);
+    const money = v => "$"+(Number(v)||0).toFixed(2);
+    const pill = (el, ok)=>{ el.className = "pill "+(ok?"good":"bad"); el.textContent = ok?"PROFIT":"LOSS"; };
+    const show = (id, yes=true)=> $(id).classList.toggle("hidden", !yes);
+    let editingId=null, userCardsRef=null, unsubList=null, cacheDocs=[];
+    const getYearFromName = (name)=>{ if(!name) return null; const m=String(name).trim().match(/^(\d{4})/); return m?parseInt(m[1],10):null; };
 
-    function getYearFromName(name){
-      if (!name) return null;
-      const m = String(name).trim().match(/^(\d{4})/);
-      return m ? parseInt(m[1],10) : null;
-    }
-
-    // ===== Email Link Auth =====
+    // Email link auth
     const actionCodeSettings = { url: `${window.location.origin}${window.location.pathname}`, handleCodeInApp: true };
-
     $("sendLink").addEventListener("click", async () => {
-      const email = $("email").value.trim();
-      $("sendStatus").textContent = "";
-      if (!email) { $("sendStatus").textContent = "Enter a valid email."; return; }
-      try {
+      const email = $("email").value.trim(); $("sendStatus").textContent="";
+      if (!email){ $("sendStatus").textContent="Enter a valid email."; return; }
+      try{
         await setPersistence(auth, browserLocalPersistence);
         await sendSignInLinkToEmail(auth, email, actionCodeSettings);
         localStorage.setItem("emailForSignIn", email);
-        $("sendStatus").textContent = "Link sent! Check your email.";
-      } catch (err) {
-        console.error(err);
-        $("sendStatus").textContent = err.message || "Could not send link.";
-      }
+        $("sendStatus").textContent="Link sent!";
+      }catch(err){ console.error(err); $("sendStatus").textContent = err.message || "Could not send link."; }
     });
 
-    async function finishSignIn(email) {
-      $("finishStatus").textContent = "Signing you in…";
-      try {
+    async function finishSignIn(email){
+      const finishStatus = $("finishStatus"); if (finishStatus) finishStatus.textContent="Signing you in…";
+      try{
         await setPersistence(auth, browserLocalPersistence);
         await signInWithEmailLink(auth, email, window.location.href);
         localStorage.removeItem("emailForSignIn");
-        $("finishStatus").textContent = "";
+        if (finishStatus) finishStatus.textContent="";
         history.replaceState({}, document.title, window.location.pathname);
-      } catch (err) {
-        console.error(err);
-        $("finishStatus").textContent = err.message || "Could not complete sign-in.";
-      }
+      }catch(err){ console.error(err); if (finishStatus) finishStatus.textContent = err.message || "Could not complete sign-in."; }
     }
 
-    import { isSignInWithEmailLink as _isSignInWithEmailLink } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-    if (_isSignInWithEmailLink(auth, window.location.href)) {
+    if (isSignInWithEmailLink(auth, window.location.href)){
       show("step-complete", true);
       const email = localStorage.getItem("emailForSignIn");
-      if (email) {
-        await finishSignIn(email);
-      } else {
+      if (email){ await finishSignIn(email); }
+      else{
         show("needEmail", true);
-        $("finishWithEmail").addEventListener("click", async () => {
+        $("finishWithEmail").addEventListener("click", async ()=>{
           const em = $("confirmEmail").value.trim();
-          if (!em) { $("finishStatus").textContent = "Enter your email."; return; }
+          if (!em){ $("finishStatus").textContent="Enter your email."; return; }
           await finishSignIn(em);
         });
       }
     }
 
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        show("authed", true);
-        show("signinCard", true);
-        show("app", true);
-        $("who").textContent = user.email || user.uid;
+    // Mini email formatter
+    function shortenEmail(email){
+      if (!email) return "";
+      const [name, domain] = email.split("@");
+      if (!domain) return email;
+      if (name.length <= 3) return name + "@" + domain;
+      return name.slice(0,3) + "…" + "@" + domain;
+    }
 
+    onAuthStateChanged(auth, (user)=>{
+      if (user){
+        show("authed", true); show("signinInline", false); show("app", true);
+        const full = user.email || user.uid;
+        $("emailChip").title = full;
+        $("whoShort").textContent = shortenEmail(full);
         userCardsRef = collection(db, `users/${user.uid}/cards`);
         if (unsubList) unsubList();
         unsubList = onSnapshot(query(userCardsRef, orderBy("createdAt","desc")), (snap)=>{
-          cacheDocs = [];
-          snap.forEach(d => {
-            const data = d.data();
-            cacheDocs.push({ id: d.id, ...data, __createdAt: data.createdAt?.toMillis?.() || 0 });
-          });
+          cacheDocs = []; snap.forEach(d=>{ const data=d.data(); cacheDocs.push({ id:d.id, ...data, __createdAt: data.createdAt?.toMillis?.() || 0 }); });
           renderFilteredSorted();
         });
-      } else {
-        show("authed", false);
-        show("app", false);
-        show("signinCard", true);
-        if (unsubList) { unsubList(); unsubList = null; }
-        cacheDocs = [];
-        $("cardsTbody").innerHTML = "";
+      }else{
+        show("authed", false); show("signinInline", true); show("app", false);
+        if (unsubList){ unsubList(); unsubList=null; }
+        cacheDocs=[]; $("cardsTbody").innerHTML="";
       }
     });
+    $("signOut").addEventListener("click", async ()=>{ try{ await signOut(auth); }catch(e){ console.error(e); } });
 
-    $("signOut").addEventListener("click", async () => {
-      try { await signOut(auth); } catch (e) { console.error(e); }
-    });
-
-    // ===== Calculator logic =====
-    function calc() {
+    // Calculator
+    function calc(){
       const raw = parseFloat($("rawPrice").value)||0;
       const grade = parseFloat($("gradingFee").value)||0;
       const p9 = parseFloat($("psa9Price").value)||0;
       const p10 = parseFloat($("psa10Price").value)||0;
       const fee = (parseFloat($("ebayFee").value)||0)/100;
       const gem = (parseFloat($("gemRate").value)||0)/100;
-
-      const cost = raw + grade;
-      const net9 = p9 * (1 - fee);
-      const net10 = p10 * (1 - fee);
-      const profit9 = net9 - cost;
-      const profit10 = net10 - cost;
-      const ev = gem * profit10 + (1 - gem) * profit9;
+      const cost = raw + grade, net9 = p9*(1-fee), net10 = p10*(1-fee);
+      const profit9 = net9 - cost, profit10 = net10 - cost;
+      const ev = gem*profit10 + (1-gem)*profit9;
       const pass = gem >= 0.60 && ev >= 0;
-
-      $("results").style.display = "block";
-      $("r_cost").textContent = "$" + cost.toFixed(2);
-      $("r_net9").textContent = "$" + net9.toFixed(2);
-      $("r_net10").textContent = "$" + net10.toFixed(2);
-      pill($("r_pill9"), profit9 >= 0);
-      pill($("r_pill10"), profit10 >= 0);
-      $("r_p9").innerHTML = (profit9>=0?'<span class="pill good">+</span> ':'<span class="pill bad">−</span> ')+ "$" + Math.abs(profit9).toFixed(2);
-      $("r_p10").innerHTML = (profit10>=0?'<span class="pill good">+</span> ':'<span class="pill bad">−</span> ')+ "$" + Math.abs(profit10).toFixed(2);
-      $("r_ev").innerHTML = (ev>=0?'<span class="pill good">+</span> ':'<span class="pill bad">−</span> ')+ "$" + Math.abs(ev).toFixed(2);
-      $("r_decision").className = "pill " + (pass ? "good" : "bad");
-      $("r_decision").textContent = pass ? "YES (Grade)" : "NO (Skip)";
-
-      return { raw, grade, p9, p10, feePct: fee, gemPct: gem, cost, net9, net10, profit9, profit10, ev, pass };
+      $("results").style.display="block";
+      $("r_cost").textContent=money(cost); $("r_net9").textContent=money(net9); $("r_net10").textContent=money(net10);
+      const r_pill9 = document.getElementById("r_pill9"), r_pill10 = document.getElementById("r_pill10");
+      if (r_pill9) { r_pill9.className="pill "+(profit9>=0?"good":"bad"); r_pill9.textContent=profit9>=0?"PROFIT":"LOSS"; }
+      if (r_pill10){ r_pill10.className="pill "+(profit10>=0?"good":"bad"); r_pill10.textContent=profit10>=0?"PROFIT":"LOSS"; }
+      $("r_p9").innerHTML=(profit9>=0?'<span class="pill good">+</span> ':'<span class="pill bad">−</span> ')+money(Math.abs(profit9));
+      $("r_p10").innerHTML=(profit10>=0?'<span class="pill good">+</span> ':'<span class="pill bad">−</span> ')+money(Math.abs(profit10));
+      $("r_ev").innerHTML=(ev>=0?'<span class="pill good">+</span> ':'<span class="pill bad">−</span> ')+money(Math.abs(ev));
+      const r_dec = document.getElementById("r_decision");
+      if (r_dec){ r_dec.className="pill "+(pass?"good":"bad"); r_dec.textContent=pass?"YES (Grade)":"NO (Skip)"; }
+      return { raw, grade, p9, p10, feePct:fee, gemPct:gem, cost, net9, net10, profit9, profit10, ev, pass };
     }
+    document.getElementById("calcBtn").addEventListener("click", ()=>{ calc(); document.getElementById("calcStatus").textContent="Calculated."; setTimeout(()=>document.getElementById("calcStatus").textContent="",1200); });
 
-    $("calcBtn").addEventListener("click", () => {
-      calc();
-      $("calcStatus").textContent = "Calculated.";
-      setTimeout(()=>$("calcStatus").textContent="",1200);
-    });
-
-    // ===== Save / Update =====
-    $("saveBtn").addEventListener("click", async () => {
-      const u = auth.currentUser;
-      if (!u) { alert("Sign in first."); return; }
-      const name = $("cardName").value.trim();
-      if (!name) { alert("Please enter a Card Name."); return; }
-      const sport = $("sport").value || "";
+    // Save/Update
+    document.getElementById("saveBtn").addEventListener("click", async ()=>{
+      const u=auth.currentUser; if(!u){ alert("Sign in first."); return; }
+      const name=document.getElementById("cardName").value.trim(); if(!name){ alert("Please enter a Card Name."); return; }
+      const sport = document.getElementById("sport").value || "";
       const r = calc();
-      try {
-        await addDoc(userCardsRef, {
-          name,
-          sport,
-          raw: r.raw, gradingFee: r.grade, psa9: r.p9, psa10: r.p10,
-          ebayFeePct: r.feePct, gemRatePct: r.gemPct,
-          cost: r.cost, net9: r.net9, net10: r.net10,
-          profit9: r.profit9, profit10: r.profit10, ev: r.ev,
-          decision: r.pass ? "YES" : "NO",
-          createdAt: serverTimestamp()
-        });
-        $("calcStatus").textContent = "Saved ✅";
-        setTimeout(()=>$("calcStatus").textContent="",1200);
-        clearEditing();
-      } catch (e) {
-        console.error(e);
-        alert(e.message || "Save failed.");
-      }
+      try{
+        await addDoc(collection(db, `users/${u.uid}/cards`),{ name,sport, raw:r.raw,gradingFee:r.grade,psa9:r.p9,psa10:r.p10, ebayFeePct:r.feePct,gemRatePct:r.gemPct, cost:r.cost,net9:r.net9,net10:r.net10, profit9:r.profit9,profit10:r.profit10, ev:r.ev, decision:r.pass?"YES":"NO", createdAt: serverTimestamp() });
+        document.getElementById("calcStatus").textContent="Saved ✅"; setTimeout(()=>document.getElementById("calcStatus").textContent="",1200); clearEditing();
+      }catch(e){ console.error(e); alert(e.message||"Save failed."); }
     });
-
-    $("updateBtn").addEventListener("click", updateExisting);
-    $("cancelEditBtn").addEventListener("click", clearEditing);
-
-    async function updateExisting() {
-      const u = auth.currentUser;
-      if (!u || !editingId) return;
-      const r = calc();
-      const name = $("cardName").value.trim();
-      const sport = $("sport").value || "";
-      try {
-        await updateDoc(doc(db, `users/${u.uid}/cards/${editingId}`), {
-          name,
-          sport,
-          raw: r.raw, gradingFee: r.grade, psa9: r.p9, psa10: r.p10,
-          ebayFeePct: r.feePct, gemRatePct: r.gemPct,
-          cost: r.cost, net9: r.net9, net10: r.net10,
-          profit9: r.profit9, profit10: r.profit10, ev: r.ev,
-          decision: r.pass ? "YES" : "NO"
-        });
-        $("calcStatus").textContent = "Updated ✅";
-        setTimeout(()=>$("calcStatus").textContent="",1200);
-        clearEditing();
-      } catch (e) {
-        console.error(e);
-        alert(e.message || "Update failed.");
-      }
+    document.getElementById("updateBtn").addEventListener("click", updateExisting);
+    document.getElementById("cancelEditBtn").addEventListener("click", clearEditing);
+    async function updateExisting(){
+      const u=auth.currentUser; if(!u || !editingId) return;
+      const r=calc(); const name=document.getElementById("cardName").value.trim(); const sport=document.getElementById("sport").value || "";
+      try{
+        await updateDoc(doc(db,`users/${u.uid}/cards/${editingId}`),{ name,sport, raw:r.raw,gradingFee:r.grade,psa9:r.p9,psa10:r.p10, ebayFeePct:r.feePct,gemRatePct:r.gemPct, cost:r.cost,net9:r.net9,net10:r.net10, profit9:r.profit9,profit10:r.profit10, ev:r.ev, decision:r.pass?"YES":"NO" });
+        document.getElementById("calcStatus").textContent="Updated ✅"; setTimeout(()=>document.getElementById("calcStatus").textContent="",1200); clearEditing();
+      }catch(e){ console.error(e); alert(e.message||"Update failed."); }
     }
-
-    function enterEdit(docId, data) {
-      editingId = docId;
-      $("cardName").value = data.name || "";
-      $("sport").value = data.sport || "";
-      $("rawPrice").value = data.raw ?? "";
-      $("gradingFee").value = data.gradingFee ?? "";
-      $("psa9Price").value = data.psa9 ?? "";
-      $("psa10Price").value = data.psa10 ?? "";
-      $("ebayFee").value = data.ebayFeePct ? (data.ebayFeePct*100).toFixed(2) : "12.5";
-      $("gemRate").value = data.gemRatePct ? (data.gemRatePct*100).toFixed(0) : "60";
+    function enterEdit(docId,data){
+      editingId=docId;
+      document.getElementById("cardName").value=data.name||"";
+      document.getElementById("sport").value=data.sport||"";
+      document.getElementById("rawPrice").value=data.raw??"";
+      document.getElementById("gradingFee").value=data.gradingFee??"";
+      document.getElementById("psa9Price").value=data.psa9??"";
+      document.getElementById("psa10Price").value=data.psa10??"";
+      document.getElementById("ebayFee").value=data.ebayFeePct ? (data.ebayFeePct*100).toFixed(2) : "12.5";
+      document.getElementById("gemRate").value=data.gemRatePct ? (data.gemRatePct*100).toFixed(0) : "60";
       calc();
-
-      $("saveBtn").style.display = "inline-block";
-      $("updateBtn").style.display = "inline-block";
-      $("cancelEditBtn").style.display = "inline-block";
+      document.getElementById("saveBtn").style.display="inline-block";
+      document.getElementById("updateBtn").style.display="inline-block";
+      document.getElementById("cancelEditBtn").style.display="inline-block";
     }
+    function clearEditing(){ editingId=null; document.getElementById("saveBtn").style.display="inline-block"; document.getElementById("updateBtn").style.display="none"; document.getElementById("cancelEditBtn").style.display="none"; }
 
-    function clearEditing() {
-      editingId = null;
-      $("saveBtn").style.display = "inline-block";
-      $("updateBtn").style.display = "none";
-      $("cancelEditBtn").style.display = "none";
-    }
-
-    // ===== Live list (per-user) with filter/sort/search =====
-    const tbody = $("cardsTbody");
-    const filterSportSel = $("filterSport");
-    const sortModeSel = $("sortMode");
-    const searchName = $("searchName");
+    // List/Filters/Search
+    const tbody=document.getElementById("cardsTbody"), filterSportSel=document.getElementById("filterSport"), sortModeSel=document.getElementById("sortMode"), searchName=document.getElementById("searchName");
     filterSportSel.addEventListener("change", renderFilteredSorted);
     sortModeSel.addEventListener("change", renderFilteredSorted);
     searchName.addEventListener("input", renderFilteredSorted);
-
-    function sportLabel(v){
-      if (!v) return "—";
-      const map = {
-        "football":"Football","basketball":"Basketball","baseball":"Baseball",
-        "hockey":"Hockey","tennis":"Tennis","non-sport":"Non-Sport"
-      };
-      return map[v] || v;
-    }
-
+    function sportLabel(v){ if(!v) return "—"; const map={football:"Football",basketball:"Basketball",baseball:"Baseball",hockey:"Hockey",tennis:"Tennis","non-sport":"Non-Sport"}; return map[v]||v; }
+    function getYearFromName(name){ if(!name) return null; const m=String(name).trim().match(/^(\d{4})/); return m?parseInt(m[1],10):null; }
     function renderFilteredSorted(){
       let rows = cacheDocs.slice();
       const f = filterSportSel.value;
-      if (f && f !== "all"){
-        if (f === "none"){
-          rows = rows.filter(x => !x.sport);
-        } else {
-          rows = rows.filter(x => (x.sport||"") === f);
-        }
-      }
-      // Search by name
-      const q = searchName.value.trim().toLowerCase();
-      if (q) rows = rows.filter(x => String(x.name||"").toLowerCase().includes(q));
-
-      // Sort
+      if (f && f !== "all"){ rows = (f==="none") ? rows.filter(x=>!x.sport) : rows.filter(x=>(x.sport||"")===f); }
+      const q = searchName.value.trim().toLowerCase(); if (q) rows = rows.filter(x=>String(x.name||"").toLowerCase().includes(q));
       const mode = sortModeSel.value;
       rows.sort((a,b)=>{
-        if (mode === "created_desc") return (b.__createdAt - a.__createdAt);
-        if (mode === "created_asc")  return (a.__createdAt - b.__createdAt);
-        if (mode === "name_asc")     return String(a.name||"").localeCompare(String(b.name||""));
-        if (mode === "name_desc")    return String(b.name||"").localeCompare(String(a.name||""));
-        if (mode === "year_asc" || mode === "year_desc"){
-          const ya = getYearFromName(a.name);
-          const yb = getYearFromName(b.name);
-          const ca = (ya ?? -Infinity);
-          const cb = (yb ?? -Infinity);
-          return mode === "year_asc" ? (ca - cb) : (cb - ca);
+        if (mode==="created_desc") return b.__createdAt - a.__createdAt;
+        if (mode==="created_asc") return a.__createdAt - b.__createdAt;
+        if (mode==="name_asc") return String(a.name||"").localeCompare(String(b.name||""));
+        if (mode==="name_desc") return String(b.name||"").localeCompare(String(a.name||""));
+        if (mode==="year_asc" || mode==="year_desc"){
+          const ya=getYearFromName(a.name), yb=getYearFromName(b.name);
+          const ca=(ya??-Infinity), cb=(yb??-Infinity);
+          return mode==="year_asc" ? (ca-cb) : (cb-ca);
         }
         return 0;
       });
-
-      // Render
-      tbody.innerHTML = "";
-      rows.forEach(c => {
-        const tr = document.createElement("tr");
-        const year = getYearFromName(c.name);
-        tr.innerHTML = `
-          <td>${c.name || ""}</td>
-          <td>${year ?? "—"}</td>
-          <td>${sportLabel(c.sport)}</td>
-          <td>$${(Number(c.raw)||0).toFixed(2)}</td>
-          <td>$${(Number(c.psa9)||0).toFixed(2)}</td>
-          <td>$${(Number(c.psa10)||0).toFixed(2)}</td>
-          <td>${Math.round((c.gemRatePct||0)*100)}%</td>
-          <td>$${(Number(c.ev)||0).toFixed(2)}</td>
+      tbody.innerHTML="";
+      rows.forEach(c=>{
+        const tr=document.createElement("tr");
+        const year=getYearFromName(c.name);
+        tr.innerHTML=`<td>${c.name||""}</td><td>${year??"—"}</td><td>${sportLabel(c.sport)}</td>
+          <td>$${(Number(c.raw)||0).toFixed(2)}</td><td>$${(Number(c.psa9)||0).toFixed(2)}</td><td>$${(Number(c.psa10)||0).toFixed(2)}</td>
+          <td>${Math.round((c.gemRatePct||0)*100)}%</td><td>$${(Number(c.ev)||0).toFixed(2)}</td>
           <td><span class="pill ${c.decision==='YES'?'good':'bad'}">${c.decision||'NO'}</span></td>
-          <td class="actions">
-            <button class="btn-secondary" data-action="edit" data-id="${c.id}">Edit</button>
-            <button class="btn-danger" data-action="delete" data-id="${c.id}">Delete</button>
-          </td>
-        `;
+          <td class="actions"><button class="btn-secondary" data-action="edit" data-id="${c.id}">Edit</button>
+          <button class="btn-danger" data-action="delete" data-id="${c.id}">Delete</button></td>`;
         tbody.appendChild(tr);
       });
     }
 
-    tbody.addEventListener("click", async (e) => {
-      const btn = e.target.closest("button");
-      if (!btn) return;
-      const id = btn.getAttribute("data-id");
-      const action = btn.getAttribute("data-action");
-      const u = auth.currentUser;
-      if (!u) return;
-
-      if (action === "delete") {
-        if (confirm("Delete this card?")) {
-          try { await deleteDoc(doc(db, `users/${u.uid}/cards/${id}`)); }
-          catch (err) { console.error(err); alert(err.message || "Delete failed."); }
-        }
-      } else if (action === "edit") {
-        try {
-          const snap = await getDoc(doc(db, `users/${u.uid}/cards/${id}`));
-          if (snap.exists()) enterEdit(id, snap.data());
-        } catch (err) {
-          console.error(err);
-          alert(err.message || "Could not load document for edit.");
-        }
-      }
+    // Firestore live
+    import { onSnapshot as _onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+    onAuthStateChanged(auth, (user)=>{
+      // duplicate handler already above, kept single source of truth
     });
 
-    // Auto-calc once
-    window.addEventListener("DOMContentLoaded", calc);
+    // Auth state already handled above to attach listener & render
+    import { collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+    onAuthStateChanged(auth, (user)=>{
+      if (!user) return;
+      // already set in previous handler
+    });
+
+    window.addEventListener("DOMContentLoaded", ()=>{ applyTheme(localStorage.getItem("gc_theme")||"dentakay"); });
   </script>
 </body>
 </html>
