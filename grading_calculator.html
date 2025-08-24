@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>Card Grading Calculator + Firebase (Compact Top Bar + Mini Auth)</title>
+  <title>Card Grading Calculator + Firebase (Fixed, Compact)</title>
   <style>
     :root{
       --bg:#0f172a; --card:#0b1220; --card2:#0a0f1e; --border:rgba(255,255,255,.08);
@@ -11,7 +11,7 @@
       --good-bg:rgba(22,163,74,.15); --good-bd:rgba(22,163,74,.3); --good-tx:#86efac;
       --bad-bg:rgba(220,38,38,.15); --bad-bd:rgba(220,38,38,.3);
     }
-    /* Palettes */
+    /* Palettes from your images */
     body.theme-dentakay { --bg:#13261F; --card:#235945; --card2:#2F735A; --border:rgba(241,242,240,.12); --muted:#F1F2F0; --text:#F1F2F0; --btn:#2F735A; --btn2:#235945; --danger:#F1F2F0; --good-bg:rgba(47,115,90,.25); --good-bd:rgba(47,115,90,.5); --good-tx:#F1F2F0; --bad-bg:rgba(13,13,13,.25); --bad-bd:rgba(13,13,13,.45) }
     body.theme-logofolio { --bg:#364959; --card:#435C73; --card2:#4478A6; --border:rgba(150,185,217,.18); --muted:#96B9D9; --text:#E8F1FA; --btn:#5684BF; --btn2:#4478A6; --danger:#8B2C2C; --good-bg:rgba(86,132,191,.22); --good-bd:rgba(86,132,191,.42); --good-tx:#CFE1F4; --bad-bg:rgba(139,44,44,.18); --bad-bd:rgba(139,44,44,.38) }
     body.theme-forest { --bg:#232625; --card:#35403A; --card2:#4C594F; --border:rgba(191,191,184,.16); --muted:#BFBFB8; --text:#EDEDEA; --btn:#A4A69C; --btn2:#4C594F; --danger:#C94040; --good-bg:rgba(164,166,156,.20); --good-bd:rgba(164,166,156,.40); --good-tx:#222; --bad-bg:rgba(201,64,64,.18); --bad-bd:rgba(201,64,64,.36) }
@@ -29,12 +29,11 @@
     label{font-size:12px;color:var(--muted);margin-bottom:4px;display:block}
     input,select{width:100%;padding:12px 12px;border-radius:12px;border:1px solid var(--border);background:var(--card2);color:var(--text);font-size:16px;line-height:1.3}
     input:focus,select:focus{outline:2px solid rgba(37,99,235,.5);outline-offset:1px}
-
     button{padding:12px 14px;border:0;border-radius:12px;background:var(--btn);color:#fff;font-weight:600;cursor:pointer;font-size:16px;line-height:1.3;min-height:44px}
     button:disabled{opacity:.6;cursor:not-allowed}
     .btn-secondary{background:var(--btn2)} .btn-danger{background:var(--danger)}
 
-    /* Compact */
+    /* Compact top bar + mini auth */
     .compact *{font-size:13px}
     .compact select,.compact input{padding:8px 10px;border-radius:10px}
     .compact button{padding:8px 10px;border-radius:10px;min-height:0}
@@ -42,17 +41,26 @@
     .topbar .group{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
     .email-wrap input{width:220px}
     @media(max-width:760px){.email-wrap input{width:180px}}
-
-    /* Mini-auth */
     .mini-auth{display:flex;align-items:center;gap:8px}
-    .mini-auth .email-chip{
-      display:inline-flex;align-items:center;gap:6px;
-      background:var(--card2);border:1px solid var(--border);
-      border-radius:999px;padding:6px 10px;font-weight:600;white-space:nowrap;
-      max-width:220px;overflow:hidden;text-overflow:ellipsis;
-    }
+    .mini-auth .email-chip{display:inline-flex;align-items:center;gap:6px;background:var(--card2);border:1px solid var(--border);border-radius:999px;padding:6px 10px;font-weight:600;white-space:nowrap;max-width:220px;overflow:hidden;text-overflow:ellipsis}
     .mini-auth button{padding:6px 8px;border-radius:999px;min-height:0}
     .mini-auth .dot{width:6px;height:6px;border-radius:999px;background:var(--btn)}
+
+    .grid{display:grid;gap:10px}
+    @media(min-width:760px){.grid{grid-template-columns:repeat(3,1fr)}}
+
+    .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+    @media(max-width:759px){.btns button{flex:1 1 48%}}
+
+    .stat{display:flex;justify-content:space-between;gap:8px;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--card2);margin-top:8px;font-size:14px}
+    .pill{padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;vertical-align:middle}
+    .good{background:var(--good-bg);color:var(--good-tx);border:1px solid var(--good-bd)}
+    .bad{background:var(--bad-bg);color:#fecaca;border:1px solid var(--bad-bd)}
+
+    .table-wrap{overflow:auto;-webkit-overflow-scrolling:touch;border-radius:10px}
+    table{width:100%;border-collapse:collapse;min-width:760px}
+    th,td{padding:10px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left;font-size:14px;vertical-align:middle}
+    th{color:var(--muted);font-weight:600;background:rgba(255,255,255,.02);position:sticky;top:0;backdrop-filter:saturate(1.2) blur(2px)}
   </style>
 </head>
 <body class="theme-dentakay">
@@ -191,8 +199,15 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import { initializeAuth, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence, browserPopupRedirectResolver, isSignInWithEmailLink, sendSignInLinkToEmail, signInWithEmailLink } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-    import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, doc, deleteDoc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+    import {
+      initializeAuth, onAuthStateChanged, signOut, setPersistence,
+      browserLocalPersistence, browserPopupRedirectResolver,
+      isSignInWithEmailLink, sendSignInLinkToEmail, signInWithEmailLink
+    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+    import {
+      getFirestore, collection, addDoc, serverTimestamp, onSnapshot,
+      query, orderBy, doc, deleteDoc, updateDoc, getDoc
+    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBvUBx-QTjTyzv8oWxoCX4rweq72yChS3M",
@@ -215,7 +230,8 @@
       const sel = document.getElementById("themeSelect"); if (sel) sel.value = key;
     }
     function cycleTheme(dir=1){ const cur = localStorage.getItem("gc_theme") || "dentakay"; const idx = THEMES.indexOf(cur); const next = THEMES[(idx+dir+THEMES.length)%THEMES.length]; applyTheme(next); }
-    (function initTheme(){ const saved=localStorage.getItem("gc_theme")||"dentakay"; applyTheme(saved);
+    (function initTheme(){
+      const saved=localStorage.getItem("gc_theme")||"dentakay"; applyTheme(saved);
       document.getElementById("themeSelect").addEventListener("change", e=>applyTheme(e.target.value));
       document.getElementById("themePrev").addEventListener("click", ()=>cycleTheme(-1));
       document.getElementById("themeNext").addEventListener("click", ()=>cycleTheme(+1));
@@ -253,27 +269,28 @@
       }catch(err){ console.error(err); if (finishStatus) finishStatus.textContent = err.message || "Could not complete sign-in."; }
     }
 
-    if (isSignInWithEmailLink(auth, window.location.href)){
-      show("step-complete", true);
-      const email = localStorage.getItem("emailForSignIn");
-      if (email){ await finishSignIn(email); }
-      else{
-        show("needEmail", true);
-        $("finishWithEmail").addEventListener("click", async ()=>{
-          const em = $("confirmEmail").value.trim();
-          if (!em){ $("finishStatus").textContent="Enter your email."; return; }
-          await finishSignIn(em);
-        });
+    // Avoid top-level await: wrap in async IIFE
+    (async () => {
+      if (isSignInWithEmailLink(auth, window.location.href)){
+        show("step-complete", true);
+        const email = localStorage.getItem("emailForSignIn");
+        if (email){ await finishSignIn(email); }
+        else{
+          show("needEmail", true);
+          $("finishWithEmail").addEventListener("click", async ()=>{
+            const em = $("confirmEmail").value.trim();
+            if (!em){ $("finishStatus").textContent="Enter your email."; return; }
+            await finishSignIn(em);
+          });
+        }
       }
-    }
+    })();
 
-    // Mini email formatter
     function shortenEmail(email){
       if (!email) return "";
       const [name, domain] = email.split("@");
       if (!domain) return email;
-      if (name.length <= 3) return name + "@" + domain;
-      return name.slice(0,3) + "…" + "@" + domain;
+      return (name.length <= 3 ? name : name.slice(0,3) + "…") + "@" + domain;
     }
 
     onAuthStateChanged(auth, (user)=>{
@@ -366,7 +383,6 @@
     sortModeSel.addEventListener("change", renderFilteredSorted);
     searchName.addEventListener("input", renderFilteredSorted);
     function sportLabel(v){ if(!v) return "—"; const map={football:"Football",basketball:"Basketball",baseball:"Baseball",hockey:"Hockey",tennis:"Tennis","non-sport":"Non-Sport"}; return map[v]||v; }
-    function getYearFromName(name){ if(!name) return null; const m=String(name).trim().match(/^(\d{4})/); return m?parseInt(m[1],10):null; }
     function renderFilteredSorted(){
       let rows = cacheDocs.slice();
       const f = filterSportSel.value;
@@ -398,19 +414,6 @@
         tbody.appendChild(tr);
       });
     }
-
-    // Firestore live
-    import { onSnapshot as _onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-    onAuthStateChanged(auth, (user)=>{
-      // duplicate handler already above, kept single source of truth
-    });
-
-    // Auth state already handled above to attach listener & render
-    import { collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-    onAuthStateChanged(auth, (user)=>{
-      if (!user) return;
-      // already set in previous handler
-    });
 
     window.addEventListener("DOMContentLoaded", ()=>{ applyTheme(localStorage.getItem("gc_theme")||"dentakay"); });
   </script>
